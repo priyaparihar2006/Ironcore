@@ -438,7 +438,7 @@
       "assignedByTrainerName": "Marcus Vance",
       "assignedDate": "2026-09-01",
       "scheduledDate": "2026-09-05",
-      "status": "PENDING",
+      "status": "COMPLETED",
       "notes": "Focus on 3-second eccentric lower on incline presses. Record last set RPE.",
       "exercises": [
         {
@@ -495,7 +495,8 @@
           "restSeconds": 45,
           "targetMuscle": "Triceps"
         }
-      ]
+      ],
+      "completedAt": "2026-09-07T07:10:22.882Z"
     },
     {
       "id": "assign_02",
@@ -564,7 +565,7 @@
       "assignedByTrainerName": "Marcus Vance",
       "assignedDate": "2026-09-02",
       "scheduledDate": "2026-09-06",
-      "status": "PENDING",
+      "status": "COMPLETED",
       "notes": "Weekend conditioning push. Keep heart rate in Zone 4.",
       "exercises": [
         {
@@ -602,7 +603,8 @@
           "restSeconds": 60,
           "targetMuscle": "Grip & Core"
         }
-      ]
+      ],
+      "completedAt": "2026-09-09T05:05:05.941Z"
     },
     {
       "id": "assign_04",
@@ -612,7 +614,7 @@
       "assignedByTrainerName": "Elena Rostova",
       "assignedDate": "2026-09-03",
       "scheduledDate": "2026-09-05",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "exercises": [
         {
           "id": "ex_7",
@@ -659,7 +661,8 @@
           "restSeconds": 45,
           "targetMuscle": "Core"
         }
-      ]
+      ],
+      "completedAt": "2026-09-09T06:03:23.291Z"
     }
   ],
   "progressRecords": [
@@ -734,6 +737,17 @@
       "workoutCompleted": true,
       "strengthScore": 85,
       "notes": "good bench press\n"
+    },
+    {
+      "id": "prog_1788934914921",
+      "userId": "user_member_01",
+      "date": "2026-09-09",
+      "weightKg": 72,
+      "caloriesBurned": 1240,
+      "steps": 11980,
+      "workoutCompleted": true,
+      "strengthScore": 85,
+      "notes": "pujhts cjnb muuijkes "
     }
   ],
   "nutritionLogs": [
@@ -789,6 +803,31 @@
           "carbsGrams": 45,
           "fatsGrams": 10,
           "time": "07:30 PM"
+        }
+      ]
+    },
+    {
+      "id": "nutri_1788934868011",
+      "userId": "user_member_01",
+      "date": "2026-09-09",
+      "dailyCalorieTarget": 2200,
+      "consumedCalories": 20,
+      "proteinTargetGrams": 175,
+      "consumedProteinGrams": 13,
+      "carbsTargetGrams": 220,
+      "consumedCarbsGrams": 64,
+      "fatsTargetGrams": 65,
+      "consumedFatsGrams": 10,
+      "meals": [
+        {
+          "id": "meal_1788935007510",
+          "type": "Lunch",
+          "name": "gn",
+          "calories": 20,
+          "proteinGrams": 13,
+          "carbsGrams": 64,
+          "fatsGrams": 10,
+          "time": "11:53 am"
         }
       ]
     }
@@ -1037,6 +1076,33 @@
       "title": "Welcome to IronCore",
       "message": "Your account is ready! Complete your fitness profile and schedule your first assessment.",
       "date": "2026-09-05",
+      "read": true,
+      "type": "success"
+    },
+    {
+      "id": "notif_1788765022882",
+      "userId": "user_member_01",
+      "title": "Workout Completed!",
+      "message": "Great job completing \"Upper Body Power & Hypertrophy\". Keep the momentum alive!",
+      "date": "2026-09-07",
+      "read": false,
+      "type": "success"
+    },
+    {
+      "id": "notif_1788930305942",
+      "userId": "user_member_01",
+      "title": "Workout Completed!",
+      "message": "Great job completing \"Metabolic Athletic Conditioning\". Keep the momentum alive!",
+      "date": "2026-09-09",
+      "read": false,
+      "type": "success"
+    },
+    {
+      "id": "notif_1788933803291",
+      "userId": "user_member_02",
+      "title": "Workout Completed!",
+      "message": "Great job completing \"Posterior Chain & Quad Force\". Keep the momentum alive!",
+      "date": "2026-09-09",
       "read": false,
       "type": "success"
     }

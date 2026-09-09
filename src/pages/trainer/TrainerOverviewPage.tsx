@@ -22,7 +22,7 @@ export const TrainerOverviewPage: React.FC = () => {
   const fetchOverview = async () => {
     try {
       setLoading(true);
-      const res = await apiRequest<TrainerOverviewData>('/trainer/overview');
+      const res = await apiRequest<TrainerOverviewData>('/trainer/summary');
       setData(res);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load trainer overview.');

@@ -19,17 +19,31 @@ import {
 import { apiRequest } from '../../lib/api';
 import { WorkoutAssignmentData, BookingSession, NutritionData } from '../../types';
 
+interface DashboardProfile {
+  userId: string;
+  currentWeight: number;
+  targetWeight: number;
+  height: number;
+  bodyFatPercentage: number;
+  muscleMass: number;
+  emergencyContact?: string;
+  bio?: string;
+}
+
 interface SummaryData {
   stats: {
-    currentWeight: number;
-    targetWeight: number;
+    currentWeight: number | null;
+    targetWeight: number | null;
     caloriesBurned: number;
     dailySteps: number;
+    hasProgressToday: boolean;
     workoutStreak: number;
-    overallProgressPercent: number;
+    weightChange30d: number | null;
+    overallProgressPercent: number | null;
   };
+  profile: DashboardProfile | null;
   todayWorkout: WorkoutAssignmentData | null;
-  nutrition: NutritionData;
+  nutrition: NutritionData | null;
   upcomingBooking: BookingSession | null;
 }
 
@@ -117,10 +131,12 @@ export const UserOverviewPage: React.FC = () => {
             Athlete Daily Focus
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
-            Stay in the zone. You're on a {stats.workoutStreak}-day streak.
+            {stats.workoutStreak > 0
+              ? `Stay in the zone. You're on a ${stats.workoutStreak}-day streak.`
+              : `Welcome back. Let's start a new streak today.`}
           </h1>
           <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-6">
-            Your body composition shows sustained fat loss with clean barbell strength retention. Keep adherence high today.
+            Stay consistent with today's assigned training and keep your nutrition on target.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -153,12 +169,23 @@ export const UserOverviewPage: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-[#080512] tracking-tight">
-            {stats.currentWeight} <span className="text-sm font-semibold text-neutral-400">kg</span>
+            {stats.currentWeight ?? '—'} <span className="text-sm font-semibold text-neutral-400">kg</span>
           </div>
-          <div className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-            <span>↓ -2.5 kg</span>
-            <span className="text-neutral-400">this month</span>
-          </div>
+          {stats.weightChange30d !== null && stats.weightChange30d !== 0 ? (
+            <div
+              className={`text-[11px] font-semibold mt-1 flex items-center gap-1 ${
+                stats.weightChange30d < 0 ? 'text-emerald-600' : 'text-orange-600'
+              }`}
+            >
+              <span>
+                {stats.weightChange30d < 0 ? '↓' : '↑'} {stats.weightChange30d > 0 ? '+' : ''}
+                {stats.weightChange30d} kg
+              </span>
+              <span className="text-neutral-400">last 30 days</span>
+            </div>
+          ) : (
+            <div className="text-[11px] font-semibold text-neutral-400 mt-1">Not enough data yet</div>
+          )}
         </div>
 
         {/* Card 2: Target Weight */}
@@ -170,10 +197,12 @@ export const UserOverviewPage: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-[#080512] tracking-tight">
-            {stats.targetWeight} <span className="text-sm font-semibold text-neutral-400">kg</span>
+            {stats.targetWeight ?? '—'} <span className="text-sm font-semibold text-neutral-400">kg</span>
           </div>
           <div className="text-[11px] font-semibold text-neutral-500 mt-1">
-            {Math.abs(stats.currentWeight - stats.targetWeight).toFixed(1)} kg remaining
+            {stats.currentWeight !== null && stats.targetWeight !== null
+              ? `${Math.abs(stats.currentWeight - stats.targetWeight).toFixed(1)} kg to goal`
+              : 'Set your goal in profile'}
           </div>
         </div>
 
@@ -189,7 +218,7 @@ export const UserOverviewPage: React.FC = () => {
             {stats.caloriesBurned.toLocaleString()} <span className="text-sm font-semibold text-neutral-400">kcal</span>
           </div>
           <div className="text-[11px] font-semibold text-neutral-500 mt-1">
-            Active expenditure
+            {stats.hasProgressToday ? 'Active expenditure today' : 'No entry logged today'}
           </div>
         </div>
 
@@ -204,8 +233,14 @@ export const UserOverviewPage: React.FC = () => {
           <div className="text-2xl sm:text-3xl font-black text-[#080512] tracking-tight">
             {stats.dailySteps.toLocaleString()}
           </div>
-          <div className="text-[11px] font-semibold text-emerald-600 mt-1">
-            119% of 10k target
+          <div
+            className={`text-[11px] font-semibold mt-1 ${
+              stats.dailySteps > 0 ? 'text-emerald-600' : 'text-neutral-400'
+            }`}
+          >
+            {stats.dailySteps > 0
+              ? `${Math.round((stats.dailySteps / 10000) * 100)}% of 10k goal`
+              : 'No entry logged today'}
           </div>
         </div>
 
@@ -221,7 +256,7 @@ export const UserOverviewPage: React.FC = () => {
             {stats.workoutStreak} <span className="text-sm font-semibold text-neutral-400">days</span>
           </div>
           <div className="text-[11px] font-semibold text-purple-700 mt-1">
-            Personal best record!
+            {stats.workoutStreak > 0 ? 'Keep the momentum going' : 'Complete a workout to start'}
           </div>
         </div>
 
@@ -342,6 +377,7 @@ export const UserOverviewPage: React.FC = () => {
               </Link>
             </div>
 
+            {nutrition ? (
             <div className="space-y-3">
               {/* Calorie Progress Bar */}
               <div>
@@ -383,6 +419,17 @@ export const UserOverviewPage: React.FC = () => {
                 </div>
               </div>
             </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/60 text-center">
+                <p className="text-xs text-neutral-500 mb-2">No meals logged today yet.</p>
+                <Link
+                  to="/dashboard/nutrition"
+                  className="px-3 py-1.5 rounded-xl bg-[#080512] text-white text-xs font-bold inline-block"
+                >
+                  Log Your First Meal
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Upcoming Trainer Booking */}

@@ -390,57 +390,130 @@ apiRouter.post('/auth/reset-password', async (req, res: Response): Promise<void>
 // 2. USER DASHBOARD ENDPOINTS
 // ==========================================
 
-// Dashboard Summary (Stats, streak, today's workout, quick progress)
+// Normalise any date value to a plain YYYY-MM-DD string so date math is consistent.
+function toDateStr(value: string | Date): string {
+  return new Date(value).toISOString().split('T')[0];
+}
+
+// Count consecutive days on which the user actually completed a workout, ending
+// today (or, if nothing is logged yet today, ending yesterday so the streak
+// isn't reset just because the user hasn't trained yet). A day counts if either:
+//   - a progress record on that day has workoutCompleted === true, or
+//   - a workout assignment was marked COMPLETED on that day.
+function calculateWorkoutStreak(
+  progress: ProgressRecord[],
+  assignments: WorkoutAssignment[],
+  todayStr: string
+): number {
+  const completedDays = new Set<string>();
+
+  progress.forEach((p) => {
+    if (p.workoutCompleted) completedDays.add(toDateStr(p.date));
+  });
+  assignments.forEach((a) => {
+    if (a.status === 'COMPLETED') {
+      completedDays.add(toDateStr(a.completedAt || a.scheduledDate));
+    }
+  });
+
+  if (completedDays.size === 0) return 0;
+
+  const cursor = new Date(todayStr);
+  if (!completedDays.has(todayStr)) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  let streak = 0;
+  while (completedDays.has(toDateStr(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+// Dashboard Summary (Stats, streak, today's workout, quick progress).
+// Every value below is derived from the logged-in user's own records
+// (req.user!.id). Missing data returns null / 0 — never another user's data
+// and never invented demo numbers.
 apiRouter.get('/user/dashboard-summary', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   const db = getDatabase();
   const userId = req.user!.id;
-
-  const profile = db.profiles.find((p) => p.userId === userId) || {
-    userId,
-    currentWeight: 72,
-    targetWeight: 65,
-    height: 178,
-    bodyFatPercentage: 16.4,
-    muscleMass: 42.1,
-  };
-
   const todayStr = new Date().toISOString().split('T')[0];
-  const userProgress = db.progressRecords.filter((p) => p.userId === userId);
-  const latestProgress = userProgress[userProgress.length - 1] || null;
 
-  const todayAssignment = db.workoutAssignments.find(
-    (a) => a.userId === userId && a.scheduledDate === todayStr
-  ) || db.workoutAssignments.find((a) => a.userId === userId && a.status === 'PENDING') || null;
+  // --- Body stats. No fake fallback: null means "profile not set up yet". ---
+  const profile = db.profiles.find((p) => p.userId === userId) || null;
 
-  const nutrition = db.nutritionLogs.find((n) => n.userId === userId && n.date === todayStr) || {
-    consumedCalories: 1240,
-    dailyCalorieTarget: 2200,
-    consumedProteinGrams: 110,
-    proteinTargetGrams: 175,
-    consumedCarbsGrams: 140,
-    carbsTargetGrams: 220,
-    consumedFatsGrams: 42,
-    fatsTargetGrams: 65,
-  };
+  // --- Progress records for THIS user, oldest first. ---
+  const userProgress = db.progressRecords
+    .filter((p) => p.userId === userId)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const todayProgress = userProgress.find((p) => p.date === todayStr) || null;
+  const earliestProgress = userProgress[0] || null;
 
+  // --- Workout assignments for THIS user. ---
+  const userAssignments = db.workoutAssignments.filter((a) => a.userId === userId);
+  const openStatuses: WorkoutAssignment['status'][] = ['PENDING', 'IN_PROGRESS'];
+
+  // Most relevant assignment to show today:
+  //   1) anything scheduled exactly for today
+  //   2) else the oldest still-open assignment that was due on/before today (overdue)
+  //   3) else the next upcoming still-open assignment
+  const todayWorkout =
+    userAssignments.find((a) => a.scheduledDate === todayStr) ||
+    userAssignments
+      .filter((a) => openStatuses.includes(a.status) && a.scheduledDate <= todayStr)
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))[0] ||
+    userAssignments
+      .filter((a) => openStatuses.includes(a.status) && a.scheduledDate > todayStr)
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))[0] ||
+    null;
+
+  // --- Nutrition: THIS user's log for today only. Null = nothing logged. ---
+  const nutrition = db.nutritionLogs.find((n) => n.userId === userId && n.date === todayStr) || null;
+
+  // --- Active membership for THIS user. ---
   const membership = db.userMemberships.find((m) => m.userId === userId && m.status === 'ACTIVE') || null;
-  const upcomingBooking = db.bookings.find((b) => b.userId === userId && b.status === 'CONFIRMED') || null;
+
+  // --- Next confirmed booking for THIS user, soonest first. ---
+  const upcomingBooking =
+    db.bookings
+      .filter((b) => b.userId === userId && b.status === 'CONFIRMED' && b.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+
+  // --- Weight change over roughly the last 30 days (needs >= 2 records). ---
+  let weightChange30d: number | null = null;
+  if (profile && userProgress.length >= 2) {
+    const cutoff = new Date(todayStr);
+    cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffStr = toDateStr(cutoff);
+    const baseline = userProgress.find((p) => p.date >= cutoffStr) || userProgress[0];
+    weightChange30d = Number((profile.currentWeight - baseline.weightKg).toFixed(1));
+  }
+
+  // --- Overall goal progress: distance covered from the starting weight toward
+  //     the target. Works for both weight-loss and weight-gain goals.
+  //     Null when we have no starting point or the goal equals the start. ---
+  let overallProgressPercent: number | null = null;
+  if (profile && earliestProgress && earliestProgress.weightKg !== profile.targetWeight) {
+    const total = earliestProgress.weightKg - profile.targetWeight;
+    const done = earliestProgress.weightKg - profile.currentWeight;
+    overallProgressPercent = Math.max(0, Math.min(100, Math.round((done / total) * 100)));
+  }
 
   res.json({
     user: sanitizeUser(req.user!),
     stats: {
-      currentWeight: profile.currentWeight || 72,
-      targetWeight: profile.targetWeight || 65,
-      caloriesBurned: latestProgress ? latestProgress.caloriesBurned : 1240,
-      dailySteps: latestProgress ? latestProgress.steps : 11980,
-      workoutStreak: 12,
-      overallProgressPercent: Math.min(
-        100,
-        Math.round(((profile.currentWeight - profile.targetWeight) / profile.currentWeight) * 100) + 75
-      ),
+      currentWeight: profile ? profile.currentWeight : null,
+      targetWeight: profile ? profile.targetWeight : null,
+      caloriesBurned: todayProgress ? todayProgress.caloriesBurned : 0,
+      dailySteps: todayProgress ? todayProgress.steps : 0,
+      hasProgressToday: Boolean(todayProgress),
+      workoutStreak: calculateWorkoutStreak(userProgress, userAssignments, todayStr),
+      weightChange30d,
+      overallProgressPercent,
     },
     profile,
-    todayWorkout: todayAssignment,
+    todayWorkout,
     nutrition,
     membership,
     upcomingBooking,
