@@ -1,5 +1,5 @@
 {
-  "name": "IronCo",
+  "name": "IronCore",
   "description": "Modern, premium Gym Management & Fitness technology platform for tracking workouts, programs, and progress.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
