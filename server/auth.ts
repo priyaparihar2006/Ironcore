@@ -2,7 +2,29 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { getDatabase, User } from './db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'ironcore-super-secret-jwt-key-2026';
+// JWT_SECRET must come from the environment in production — there is no
+// production fallback. In development we allow a clearly-labelled insecure
+// default so `npm run dev` works out of the box without requiring a .env file.
+const DEV_ONLY_JWT_SECRET = 'ironcore-DEV-ONLY-insecure-secret-do-not-use-in-production';
+
+function resolveJwtSecret(): string {
+  const fromEnv = process.env.JWT_SECRET?.trim();
+  if (fromEnv) return fromEnv;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'JWT_SECRET environment variable is required in production. Set it before starting the server.'
+    );
+  }
+
+  console.warn(
+    '[auth] JWT_SECRET is not set — using an insecure development-only default. ' +
+      'This is NOT safe for production; set JWT_SECRET in your .env file.'
+  );
+  return DEV_ONLY_JWT_SECRET;
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 export interface TokenPayload {
   userId: string;

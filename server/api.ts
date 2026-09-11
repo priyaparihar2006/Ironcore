@@ -11,6 +11,7 @@ import {
   WorkoutAssignment,
   ProgressRecord,
   MealItem,
+  NutritionLog,
   Booking,
   UserMembership,
   PaymentRecord,
@@ -572,61 +573,135 @@ apiRouter.post('/user/progress', authMiddleware, (req: AuthenticatedRequest, res
   const db = getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Validate inputs — no fake fallbacks. Weight is required and must be sane;
+  // the rest are optional but rejected if present and out of range.
+  const weight = Number(weightKg);
+  if (!Number.isFinite(weight) || weight < 20 || weight > 400) {
+    res.status(400).json({ error: 'Weight (kg) is required and must be between 20 and 400.' });
+    return;
+  }
+
+  const calories = caloriesBurned === undefined || caloriesBurned === '' ? 0 : Number(caloriesBurned);
+  if (!Number.isFinite(calories) || calories < 0 || calories > 20000) {
+    res.status(400).json({ error: 'Calories burned must be a number between 0 and 20000.' });
+    return;
+  }
+
+  const stepCount = steps === undefined || steps === '' ? 0 : Number(steps);
+  if (!Number.isFinite(stepCount) || stepCount < 0 || stepCount > 200000) {
+    res.status(400).json({ error: 'Steps must be a number between 0 and 200000.' });
+    return;
+  }
+
+  const strength = strengthScore === undefined || strengthScore === '' ? 0 : Number(strengthScore);
+  if (!Number.isFinite(strength) || strength < 0 || strength > 100) {
+    res.status(400).json({ error: 'Strength score must be a number between 0 and 100.' });
+    return;
+  }
+
   const newRecord: ProgressRecord = {
     id: `prog_${Date.now()}`,
     userId: req.user!.id,
     date: todayStr,
-    weightKg: Number(weightKg) || 72,
-    caloriesBurned: Number(caloriesBurned) || 1200,
-    steps: Number(steps) || 10000,
+    weightKg: weight,
+    caloriesBurned: calories,
+    steps: stepCount,
     workoutCompleted: true,
-    strengthScore: Number(strengthScore) || 80,
-    notes: notes || '',
+    strengthScore: strength,
+    notes: typeof notes === 'string' ? notes.trim() : '',
   };
 
   db.progressRecords.push(newRecord);
 
-  // Update profile currentWeight
+  // Keep the profile's current weight in sync with the latest log.
   const profile = db.profiles.find((p) => p.userId === req.user!.id);
-  if (profile && weightKg) {
-    profile.currentWeight = Number(weightKg);
+  if (profile) {
+    profile.currentWeight = weight;
   }
 
   saveDatabase(db);
   res.status(201).json({ message: 'Progress record logged!', record: newRecord });
 });
 
-// Nutrition
+// Default daily macro/calorie goals used when the user has no log for the day.
+// These are targets (goals), not logged data — consumed values always stay 0
+// until the user actually logs a meal.
+const DEFAULT_NUTRITION_TARGETS = {
+  dailyCalorieTarget: 2200,
+  proteinTargetGrams: 175,
+  carbsTargetGrams: 220,
+  fatsTargetGrams: 65,
+};
+
+// Recompute consumed totals straight from the meal list so the numbers shown
+// are always the real sum of what was logged.
+function recalcNutritionTotals(log: NutritionLog): void {
+  log.consumedCalories = log.meals.reduce((s, m) => s + m.calories, 0);
+  log.consumedProteinGrams = log.meals.reduce((s, m) => s + m.proteinGrams, 0);
+  log.consumedCarbsGrams = log.meals.reduce((s, m) => s + m.carbsGrams, 0);
+  log.consumedFatsGrams = log.meals.reduce((s, m) => s + m.fatsGrams, 0);
+}
+
+// Nutrition — today's log for the authenticated user. Read-only: if there is no
+// log yet we return an empty (zeroed) one WITHOUT saving it, so we never create
+// fake records just because someone opened the page.
 apiRouter.get('/user/nutrition', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   const db = getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
-  let log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
+  const log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
 
   if (!log) {
-    log = {
-      id: `nutri_${Date.now()}`,
-      userId: req.user!.id,
-      date: todayStr,
-      dailyCalorieTarget: 2200,
-      consumedCalories: 0,
-      proteinTargetGrams: 175,
-      consumedProteinGrams: 0,
-      carbsTargetGrams: 220,
-      consumedCarbsGrams: 0,
-      fatsTargetGrams: 65,
-      consumedFatsGrams: 0,
-      meals: [],
-    };
-    db.nutritionLogs.push(log);
-    saveDatabase(db);
+    res.json({
+      nutrition: {
+        id: `nutri_empty_${todayStr}`,
+        userId: req.user!.id,
+        date: todayStr,
+        ...DEFAULT_NUTRITION_TARGETS,
+        consumedCalories: 0,
+        consumedProteinGrams: 0,
+        consumedCarbsGrams: 0,
+        consumedFatsGrams: 0,
+        meals: [],
+      },
+    });
+    return;
   }
 
+  recalcNutritionTotals(log);
   res.json({ nutrition: log });
 });
 
-// Add Meal
+// Add Meal — appends a real meal to today's log for the authenticated user.
 apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   const { type, name, calories, proteinGrams, carbsGrams, fatsGrams } = req.body;
+
+  // Validate inputs — no fake fallbacks for the identifying fields.
+  const allowedTypes: MealItem['type'][] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+  const mealType: MealItem['type'] = allowedTypes.includes(type) ? type : 'Snack';
+
+  if (typeof name !== 'string' || name.trim().length === 0) {
+    res.status(400).json({ error: 'A meal name / description is required.' });
+    return;
+  }
+
+  const cals = Number(calories);
+  if (!Number.isFinite(cals) || cals < 0 || cals > 20000) {
+    res.status(400).json({ error: 'Calories must be a number between 0 and 20000.' });
+    return;
+  }
+
+  const macro = (value: unknown): number => {
+    const n = value === undefined || value === '' ? 0 : Number(value);
+    return Number.isFinite(n) && n >= 0 && n <= 2000 ? n : NaN;
+  };
+  const protein = macro(proteinGrams);
+  const carbs = macro(carbsGrams);
+  const fats = macro(fatsGrams);
+  if (Number.isNaN(protein) || Number.isNaN(carbs) || Number.isNaN(fats)) {
+    res.status(400).json({ error: 'Protein, carbs and fats must each be a number between 0 and 2000.' });
+    return;
+  }
+
   const db = getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
   let log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
@@ -636,13 +711,10 @@ apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedReque
       id: `nutri_${Date.now()}`,
       userId: req.user!.id,
       date: todayStr,
-      dailyCalorieTarget: 2200,
+      ...DEFAULT_NUTRITION_TARGETS,
       consumedCalories: 0,
-      proteinTargetGrams: 175,
       consumedProteinGrams: 0,
-      carbsTargetGrams: 220,
       consumedCarbsGrams: 0,
-      fatsTargetGrams: 65,
       consumedFatsGrams: 0,
       meals: [],
     };
@@ -651,29 +723,34 @@ apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedReque
 
   const newMeal: MealItem = {
     id: `meal_${Date.now()}`,
-    type: type || 'Snack',
-    name: name || 'Healthy Meal',
-    calories: Number(calories) || 0,
-    proteinGrams: Number(proteinGrams) || 0,
-    carbsGrams: Number(carbsGrams) || 0,
-    fatsGrams: Number(fatsGrams) || 0,
+    type: mealType,
+    name: name.trim(),
+    calories: cals,
+    proteinGrams: protein,
+    carbsGrams: carbs,
+    fatsGrams: fats,
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
 
   log.meals.push(newMeal);
-  log.consumedCalories += newMeal.calories;
-  log.consumedProteinGrams += newMeal.proteinGrams;
-  log.consumedCarbsGrams += newMeal.carbsGrams;
-  log.consumedFatsGrams += newMeal.fatsGrams;
+  recalcNutritionTotals(log);
 
   saveDatabase(db);
   res.status(201).json({ message: 'Meal logged successfully!', meal: newMeal, nutrition: log });
 });
 
-// User Membership
+// User Membership — the authenticated user's current membership (prefer the
+// ACTIVE one; otherwise fall back to their most recent so expired/cancelled
+// states can still be shown) plus the list of plans that can be switched to.
 apiRouter.get('/user/membership', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   const db = getDatabase();
-  const membership = db.userMemberships.find((m) => m.userId === req.user!.id && m.status === 'ACTIVE');
+  const userId = req.user!.id;
+
+  const mine = db.userMemberships
+    .filter((m) => m.userId === userId)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate));
+
+  const membership = mine.find((m) => m.status === 'ACTIVE') || mine[0] || null;
   const plans = db.membershipPlans.filter((p) => p.status === 'ACTIVE');
   res.json({ membership, plans });
 });
@@ -1051,6 +1128,35 @@ apiRouter.get(
   }
 );
 
+// Update Session Status (Trainer) — mirrors the ownership pattern used by
+// PUT /user/bookings/:id/cancel, scoped to the trainer's own sessions.
+apiRouter.put(
+  '/trainer/sessions/:id/status',
+  authMiddleware,
+  requireRole(['TRAINER', 'ADMIN']),
+  (req: AuthenticatedRequest, res: Response): void => {
+    const { status } = req.body;
+    const allowedStatuses: Booking['status'][] = ['CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED'];
+    if (!allowedStatuses.includes(status)) {
+      res.status(400).json({ error: `Status must be one of: ${allowedStatuses.join(', ')}.` });
+      return;
+    }
+
+    const db = getDatabase();
+    const booking = db.bookings.find(
+      (b) => b.id === req.params.id && (b.trainerId === req.user!.id || req.user!.role === 'ADMIN')
+    );
+    if (!booking) {
+      res.status(404).json({ error: 'Session not found.' });
+      return;
+    }
+
+    booking.status = status;
+    saveDatabase(db);
+    res.json({ message: 'Session status updated.', session: booking });
+  }
+);
+
 // ==========================================
 // 4. ADMIN DASHBOARD ENDPOINTS
 // ==========================================
@@ -1420,6 +1526,39 @@ apiRouter.put(
 
     saveDatabase(db);
     res.json({ message: 'Trainer details updated successfully.', trainer });
+  }
+);
+
+// Assign Client to Trainer (Admin) — sets the existing User.assignedTrainerId
+// field, the same field PUT /admin/users/:id already supports updating.
+apiRouter.post(
+  '/admin/trainers/assign-client',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  (req, res: Response): void => {
+    const { trainerId, userId } = req.body;
+    if (!trainerId || !userId) {
+      res.status(400).json({ error: 'trainerId and userId are required.' });
+      return;
+    }
+
+    const db = getDatabase();
+    const trainer = db.trainers.find((t) => t.id === trainerId || t.userId === trainerId);
+    if (!trainer) {
+      res.status(404).json({ error: 'Trainer not found.' });
+      return;
+    }
+
+    const client = db.users.find((u) => u.id === userId);
+    if (!client) {
+      res.status(404).json({ error: 'Client not found.' });
+      return;
+    }
+
+    client.assignedTrainerId = trainer.userId;
+    saveDatabase(db);
+
+    res.json({ message: `${client.name} assigned to ${trainer.name}.`, user: sanitizeUser(client) });
   }
 );
 

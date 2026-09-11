@@ -20,17 +20,18 @@ export const TrainerClientsPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      // Backend key is `workoutPlans` (see server/api.ts GET /trainer/workouts).
       const [cRes, pRes] = await Promise.all([
         apiRequest<{ clients: UserProfileData[] }>('/trainer/clients'),
-        apiRequest<{ plans: WorkoutPlanTemplate[] }>('/trainer/workout-plans'),
+        apiRequest<{ workoutPlans: WorkoutPlanTemplate[] }>('/trainer/workouts'),
       ]);
       setClients(cRes.clients || []);
-      setWorkoutPlans(pRes.plans || []);
+      setWorkoutPlans(pRes.workoutPlans || []);
       if (cRes.clients?.length > 0) {
         setSelectedClient(cRes.clients[0]);
       }
-      if (pRes.plans?.length > 0) {
-        setSelectedPlanId(pRes.plans[0].id);
+      if (pRes.workoutPlans?.length > 0) {
+        setSelectedPlanId(pRes.workoutPlans[0].id);
       }
     } catch (err) {
       console.error(err);
@@ -49,10 +50,12 @@ export const TrainerClientsPage: React.FC = () => {
 
     setAssigning(true);
     try {
-      await apiRequest('/trainer/workouts/assign', {
+      // Backend route is /trainer/assign-workout and expects `clientId`
+      // (see server/api.ts POST /trainer/assign-workout).
+      await apiRequest('/trainer/assign-workout', {
         method: 'POST',
         body: JSON.stringify({
-          userId: selectedClient.userId,
+          clientId: selectedClient.userId,
           workoutPlanId: selectedPlanId,
           scheduledDate,
           notes,

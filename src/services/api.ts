@@ -1,4 +1,7 @@
-const BASE_URL = "http://localhost:5000/api";
+import { API_BASE } from "../lib/api";
+
+// Same-origin relative path (shared with lib/api.ts) — see that file for why.
+const BASE_URL = API_BASE;
 
 export type Role = "USER" | "TRAINER" | "ADMIN";
 

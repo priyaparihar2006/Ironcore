@@ -46,12 +46,12 @@
       "id": "user_member_01",
       "name": "Jordan Reed",
       "email": "jordan@ironcore.fit",
-      "passwordHash": "$2b$10$YR7s8ZbOZpCw1E2cmGB95eYgKcf.gcUk/1J1Hn97IBNS1qPCkTBIO",
+      "passwordHash": "$2b$10$PL08EpaZbRTtQEFhiCWld.NeYbBFO2oFj2L19f9wPW/CfWKj39feK",
       "role": "USER",
-      "phone": "+1 (555) 234-5678",
+      "phone": "+1 555 000 1111",
       "dateOfBirth": "1996-06-18",
       "gender": "Male",
-      "fitnessGoal": "Weight Loss",
+      "fitnessGoal": "Strength",
       "status": "ACTIVE",
       "joinedDate": "2025-01-10",
       "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80",
@@ -149,11 +149,11 @@
   "profiles": [
     {
       "userId": "user_member_01",
-      "currentWeight": 72,
-      "targetWeight": 65,
-      "height": 178,
-      "bodyFatPercentage": 16.4,
-      "muscleMass": 42.1,
+      "currentWeight": 71.5,
+      "targetWeight": 66,
+      "height": 179,
+      "bodyFatPercentage": 15.8,
+      "muscleMass": 43,
       "emergencyContact": "Sarah Reed (+1 555-901-8899)",
       "bio": "Committed to dropping 7kg of fat while preserving lean barbell power."
     },
@@ -748,6 +748,17 @@
       "workoutCompleted": true,
       "strengthScore": 85,
       "notes": "pujhts cjnb muuijkes "
+    },
+    {
+      "id": "prog_1788938898414",
+      "userId": "user_member_01",
+      "date": "2026-09-09",
+      "weightKg": 71,
+      "caloriesBurned": 900,
+      "steps": 1200,
+      "workoutCompleted": true,
+      "strengthScore": 7,
+      "notes": "momk ji"
     }
   ],
   "nutritionLogs": [
@@ -811,11 +822,11 @@
       "userId": "user_member_01",
       "date": "2026-09-09",
       "dailyCalorieTarget": 2200,
-      "consumedCalories": 20,
+      "consumedCalories": 720,
       "proteinTargetGrams": 175,
-      "consumedProteinGrams": 13,
+      "consumedProteinGrams": 89,
       "carbsTargetGrams": 220,
-      "consumedCarbsGrams": 64,
+      "consumedCarbsGrams": 163,
       "fatsTargetGrams": 65,
       "consumedFatsGrams": 10,
       "meals": [
@@ -828,6 +839,41 @@
           "carbsGrams": 64,
           "fatsGrams": 10,
           "time": "11:53 am"
+        },
+        {
+          "id": "meal_1788944043906",
+          "type": "Dinner",
+          "name": "rajma chawal",
+          "calories": 700,
+          "proteinGrams": 76,
+          "carbsGrams": 99,
+          "fatsGrams": 0,
+          "time": "02:24 pm"
+        }
+      ]
+    },
+    {
+      "id": "nutri_1788943659604",
+      "userId": "user_member_02",
+      "date": "2026-09-09",
+      "dailyCalorieTarget": 2200,
+      "consumedCalories": 600,
+      "proteinTargetGrams": 175,
+      "consumedProteinGrams": 50,
+      "carbsTargetGrams": 220,
+      "consumedCarbsGrams": 40,
+      "fatsTargetGrams": 65,
+      "consumedFatsGrams": 15,
+      "meals": [
+        {
+          "id": "meal_1788943659987",
+          "type": "Lunch",
+          "name": "Test Chicken Bowl",
+          "calories": 600,
+          "proteinGrams": 50,
+          "carbsGrams": 40,
+          "fatsGrams": 15,
+          "time": "02:17 pm"
         }
       ]
     }
@@ -1000,7 +1046,7 @@
       "description": "IronCore Pro Membership - Monthly Subscription",
       "invoiceNumber": "INV-2026-8812",
       "planName": "Pro",
-      "method": "Visa •••• 4242"
+      "method": "Visa \u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2 4242"
     },
     {
       "id": "pay_02",
@@ -1013,7 +1059,7 @@
       "description": "IronCore Elite Membership - Annual Prepay",
       "invoiceNumber": "INV-2026-1049",
       "planName": "Elite",
-      "method": "Mastercard •••• 5510"
+      "method": "Mastercard \u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2 5510"
     },
     {
       "id": "pay_03",
@@ -1026,7 +1072,7 @@
       "description": "IronCore Basic Membership - Monthly Subscription",
       "invoiceNumber": "INV-2026-9021",
       "planName": "Basic",
-      "method": "Amex •••• 3004"
+      "method": "Amex \u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2 3004"
     },
     {
       "id": "pay_04",
@@ -1039,7 +1085,7 @@
       "description": "IronCore Pro Membership - Monthly Subscription",
       "invoiceNumber": "INV-2026-8550",
       "planName": "Pro",
-      "method": "Visa •••• 9811"
+      "method": "Visa \u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2\u00e2\u20ac\u00a2 9811"
     }
   ],
   "notifications": [

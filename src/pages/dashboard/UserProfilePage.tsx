@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Shield, Target } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
-import { UserProfileData } from '../../types';
 
 export const UserProfilePage: React.FC = () => {
   const { user, profile, refreshUser } = useAuth();
@@ -33,22 +32,22 @@ export const UserProfilePage: React.FC = () => {
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    // Identity fields live on the User record.
     if (user) {
       setName(user.name);
       setEmail(user.email);
       setAvatar(user.avatar || '');
+      setPhone(user.phone || '');
+      setGender(user.gender || 'Prefer not to say');
+      setFitnessGoal(user.fitnessGoal || 'General Fitness');
     }
+    // Body measurements live on the UserProfile record.
     if (profile) {
-      setPhone(profile.phone || '');
-      setGender(profile.gender || 'Prefer not to say');
-      setFitnessGoal(profile.fitnessGoal || 'General Fitness');
-      if (profile.measurements) {
-        setHeightCm(String(profile.measurements.heightCm || 178));
-        setCurrentWeight(String(profile.measurements.currentWeightKg || 72));
-        setTargetWeight(String(profile.measurements.targetWeightKg || 65));
-        setBodyFatPercent(String(profile.measurements.bodyFatPercent || 14.5));
-        setMuscleMassPercent(String(profile.measurements.muscleMassPercent || 42.0));
-      }
+      setHeightCm(String(profile.height ?? 178));
+      setCurrentWeight(String(profile.currentWeight ?? 72));
+      setTargetWeight(String(profile.targetWeight ?? 65));
+      setBodyFatPercent(String(profile.bodyFatPercentage ?? 14.5));
+      setMuscleMassPercent(String(profile.muscleMass ?? 42.0));
     }
   }, [user, profile]);
 
@@ -58,7 +57,7 @@ export const UserProfilePage: React.FC = () => {
     setProfileMsg(null);
 
     try {
-      await apiRequest('/user/profile', {
+      await apiRequest('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify({
           name,
@@ -66,13 +65,11 @@ export const UserProfilePage: React.FC = () => {
           gender,
           fitnessGoal,
           avatar,
-          measurements: {
-            heightCm: parseFloat(heightCm),
-            currentWeightKg: parseFloat(currentWeight),
-            targetWeightKg: parseFloat(targetWeight),
-            bodyFatPercent: parseFloat(bodyFatPercent),
-            muscleMassPercent: parseFloat(muscleMassPercent),
-          },
+          height: parseFloat(heightCm),
+          currentWeight: parseFloat(currentWeight),
+          targetWeight: parseFloat(targetWeight),
+          bodyFatPercentage: parseFloat(bodyFatPercent),
+          muscleMass: parseFloat(muscleMassPercent),
         }),
       });
 
@@ -102,8 +99,8 @@ export const UserProfilePage: React.FC = () => {
 
     setPasswordLoading(true);
     try {
-      await apiRequest('/user/change-password', {
-        method: 'POST',
+      await apiRequest('/auth/change-password', {
+        method: 'PUT',
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 

@@ -1,223 +1,44 @@
-import fs from 'fs';
-import path from 'path';
 import bcrypt from 'bcryptjs';
+import { hydrateAll, persistAll, migrateFromJsonIfNeeded } from './sqlite.js';
+import type {
+  User,
+  UserProfile,
+  TrainerInfo,
+  Exercise,
+  WorkoutPlan,
+  WorkoutAssignment,
+  ProgressRecord,
+  MealItem,
+  NutritionLog,
+  MembershipPlan,
+  UserMembership,
+  Booking,
+  PaymentRecord,
+  NotificationItem,
+  ClientProgressNote,
+  DatabaseSchema,
+} from './types.js';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  passwordHash: string;
-  role: 'USER' | 'TRAINER' | 'ADMIN';
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  fitnessGoal?: string;
-  status: 'ACTIVE' | 'INACTIVE';
-  joinedDate: string;
-  avatar?: string;
-  assignedTrainerId?: string;
-}
-
-export interface UserProfile {
-  userId: string;
-  currentWeight: number; // in kg
-  targetWeight: number; // in kg
-  height: number; // in cm
-  bodyFatPercentage: number;
-  muscleMass: number;
-  emergencyContact?: string;
-  bio?: string;
-}
-
-export interface TrainerInfo {
-  id: string;
-  userId: string;
-  name: string;
-  email: string;
-  phone: string;
-  specialty: string;
-  experience: string;
-  rating: number;
-  reviewsCount: number;
-  bio: string;
-  certifications: string[];
-  clientCount: number;
-  availableSlots: string[];
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface Exercise {
-  id: string;
-  name: string;
-  sets: number;
-  reps: number;
-  weightKg?: number;
-  restSeconds: number;
-  targetMuscle: string;
-}
-
-export interface WorkoutPlan {
-  id: string;
-  title: string;
-  category: string;
-  level: string;
-  durationMinutes: number;
-  caloriesBurn: number;
-  description: string;
-  createdByTrainerId?: string;
-  exercises: Exercise[];
-}
-
-export interface WorkoutAssignment {
-  id: string;
-  userId: string;
-  workoutPlanId: string;
-  workoutTitle: string;
-  assignedByTrainerName?: string;
-  assignedDate: string;
-  scheduledDate: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
-  completedAt?: string;
-  notes?: string;
-  exercises: Exercise[];
-}
-
-export interface ProgressRecord {
-  id: string;
-  userId: string;
-  date: string;
-  weightKg: number;
-  caloriesBurned: number;
-  steps: number;
-  workoutCompleted: boolean;
-  strengthScore: number;
-  notes?: string;
-}
-
-export interface MealItem {
-  id: string;
-  type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-  name: string;
-  calories: number;
-  proteinGrams: number;
-  carbsGrams: number;
-  fatsGrams: number;
-  time: string;
-}
-
-export interface NutritionLog {
-  id: string;
-  userId: string;
-  date: string;
-  dailyCalorieTarget: number;
-  consumedCalories: number;
-  proteinTargetGrams: number;
-  consumedProteinGrams: number;
-  carbsTargetGrams: number;
-  consumedCarbsGrams: number;
-  fatsTargetGrams: number;
-  consumedFatsGrams: number;
-  meals: MealItem[];
-}
-
-export interface MembershipPlan {
-  id: string;
-  name: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  description: string;
-  badge?: string;
-  isPopular?: boolean;
-  features: string[];
-  status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface UserMembership {
-  id: string;
-  userId: string;
-  planId: string;
-  planName: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'PENDING' | 'CANCELLED';
-  startDate: string;
-  expiryDate: string;
-  billingCycle: 'monthly' | 'annual';
-  pricePaid: number;
-  autoRenew: boolean;
-}
-
-export interface Booking {
-  id: string;
-  userId: string;
-  userName: string;
-  trainerId: string;
-  trainerName: string;
-  date: string;
-  timeSlot: string;
-  sessionType: '1-on-1 PT' | 'Nutrition Consultation' | 'Form Assessment' | 'Custom Coaching';
-  status: 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
-  location: string;
-  notes?: string;
-}
-
-export interface PaymentRecord {
-  id: string;
-  userId: string;
-  userName: string;
-  amount: number;
-  currency: string;
-  status: 'PAID' | 'REFUNDED' | 'FAILED';
-  date: string;
-  description: string;
-  invoiceNumber: string;
-  planName: string;
-  method: string;
-}
-
-export interface NotificationItem {
-  id: string;
-  userId: string;
-  title: string;
-  message: string;
-  date: string;
-  read: boolean;
-  type: 'info' | 'success' | 'warning';
-}
-
-export interface ClientProgressNote {
-  id: string;
-  trainerId: string;
-  userId: string;
-  date: string;
-  note: string;
-  flag?: 'ON_TRACK' | 'ATTENTION_NEEDED' | 'MILESTONE_REACHED';
-}
-
-export interface DatabaseSchema {
-  users: User[];
-  profiles: UserProfile[];
-  trainers: TrainerInfo[];
-  workoutPlans: WorkoutPlan[];
-  workoutAssignments: WorkoutAssignment[];
-  progressRecords: ProgressRecord[];
-  nutritionLogs: NutritionLog[];
-  membershipPlans: MembershipPlan[];
-  userMemberships: UserMembership[];
-  bookings: Booking[];
-  payments: PaymentRecord[];
-  notifications: NotificationItem[];
-  trainerNotes: ClientProgressNote[];
-  passwordResetTokens: { token: string; email: string; expiresAt: number }[];
-}
-
-const DB_FILE_PATH = path.join(process.cwd(), 'data', 'ironcore_db.json');
-
-// Ensure data directory exists
-function ensureDataDir() {
-  const dir = path.dirname(DB_FILE_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
+// Re-exported so existing imports elsewhere (e.g. `import { User, ... } from
+// './db.js'` in server/api.ts) keep working unchanged.
+export type {
+  User,
+  UserProfile,
+  TrainerInfo,
+  Exercise,
+  WorkoutPlan,
+  WorkoutAssignment,
+  ProgressRecord,
+  MealItem,
+  NutritionLog,
+  MembershipPlan,
+  UserMembership,
+  Booking,
+  PaymentRecord,
+  NotificationItem,
+  ClientProgressNote,
+  DatabaseSchema,
+};
 
 // Seed initial database
 export function generateSeedData(): DatabaseSchema {
@@ -445,7 +266,8 @@ export function generateSeedData(): DatabaseSchema {
       availableSlots: ['08:00 AM', '10:00 AM', '01:00 PM', '05:00 PM', '07:00 PM'],
       status: 'ACTIVE',
     },
-  ];
+  ];     
+  
 
   const workoutPlans: WorkoutPlan[] = [
     {
@@ -848,32 +670,34 @@ export function generateSeedData(): DatabaseSchema {
 
 let dbCache: DatabaseSchema | null = null;
 
+// Storage is SQLite (see server/sqlite.ts) — data/ironcore.db. The rest of the
+// app still works exactly like it did against the JSON file: getDatabase()
+// returns one shared in-memory object that routes read and mutate directly;
+// saveDatabase() persists whatever's in that object back to disk. The first
+// call to getDatabase() also runs the one-time, idempotent JSON->SQLite
+// migration if data/ironcore.db is empty and data/ironcore_db.json exists
+// (see migrateFromJsonIfNeeded in server/sqlite.ts) — the JSON file is only
+// ever read, never modified or deleted by this.
 export function getDatabase(): DatabaseSchema {
   if (dbCache) return dbCache;
 
-  ensureDataDir();
-
-  if (fs.existsSync(DB_FILE_PATH)) {
-    try {
-      const data = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-      dbCache = JSON.parse(data);
-      return dbCache!;
-    } catch (e) {
-      console.error('Failed to parse database file, reseeding:', e);
-    }
+  const result = migrateFromJsonIfNeeded(generateSeedData);
+  if (result.ranMigration) {
+    console.log(
+      `[db] Migrated data into SQLite from ${result.source === 'json' ? 'data/ironcore_db.json' : 'built-in seed data'}:`,
+      result.counts
+    );
   }
 
-  const seed = generateSeedData();
-  saveDatabase(seed);
-  return seed;
+  dbCache = hydrateAll();
+  return dbCache;
 }
 
 export function saveDatabase(data: DatabaseSchema): void {
-  ensureDataDir();
   dbCache = data;
   try {
-    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    persistAll(data);
   } catch (e) {
-    console.error('Failed to write database file:', e);
+    console.error('Failed to write SQLite database:', e);
   }
 }

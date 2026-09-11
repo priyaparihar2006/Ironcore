@@ -1,6 +1,7 @@
-// Client API wrapper for IronCore backend
-
-const API_BASE = '/api';
+// Client API wrapper for IronCore backend.
+// Same-origin relative path — the Express server serves both the API and the
+// built frontend from one origin/port in production, so this never needs a host.
+export const API_BASE = '/api';
 
 export function getStoredToken(): string | null {
   return localStorage.getItem('ironcore_token');

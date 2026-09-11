@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Apple, Flame, Plus, Clock, AlertCircle, X, CheckCircle2 } from 'lucide-react';
+import { Apple, Flame, Plus, Clock, AlertCircle, X } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { NutritionData, MealEntry } from '../../types';
 
@@ -17,10 +17,12 @@ export const UserNutritionPage: React.FC = () => {
   const [carbs, setCarbs] = useState('');
   const [fats, setFats] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const fetchNutrition = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await apiRequest<{ nutrition: NutritionData }>('/user/nutrition');
       setNutrition(res.nutrition);
     } catch (err: unknown) {
@@ -34,9 +36,37 @@ export const UserNutritionPage: React.FC = () => {
     fetchNutrition();
   }, []);
 
+  const closeModal = () => {
+    setShowModal(false);
+    setMealName('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFats('');
+    setFormError(null);
+  };
+
   const handleAddMeal = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mealName.trim() || !calories) return;
+    setFormError(null);
+
+    if (!mealName.trim()) {
+      setFormError('Enter a meal name / description.');
+      return;
+    }
+    const cals = Number(calories);
+    if (!Number.isFinite(cals) || cals < 0 || cals > 20000) {
+      setFormError('Calories must be a number between 0 and 20000.');
+      return;
+    }
+    const macros = { protein, carbs, fats };
+    for (const [label, raw] of Object.entries(macros)) {
+      const n = raw === '' ? 0 : Number(raw);
+      if (!Number.isFinite(n) || n < 0 || n > 2000) {
+        setFormError(`${label[0].toUpperCase()}${label.slice(1)} must be between 0 and 2000 g.`);
+        return;
+      }
+    }
 
     setSubmitting(true);
     try {
@@ -45,22 +75,16 @@ export const UserNutritionPage: React.FC = () => {
         body: JSON.stringify({
           type: mealType,
           name: mealName.trim(),
-          calories: parseInt(calories, 10),
-          proteinGrams: parseInt(protein, 10) || 0,
-          carbsGrams: parseInt(carbs, 10) || 0,
-          fatsGrams: parseInt(fats, 10) || 0,
+          calories: cals,
+          proteinGrams: protein === '' ? 0 : Number(protein),
+          carbsGrams: carbs === '' ? 0 : Number(carbs),
+          fatsGrams: fats === '' ? 0 : Number(fats),
         }),
       });
-
-      setShowModal(false);
-      setMealName('');
-      setCalories('');
-      setProtein('');
-      setCarbs('');
-      setFats('');
+      closeModal();
       await fetchNutrition();
     } catch (err) {
-      console.error(err);
+      setFormError(err instanceof Error ? err.message : 'Could not log this meal.');
     } finally {
       setSubmitting(false);
     }
@@ -264,7 +288,7 @@ export const UserNutritionPage: React.FC = () => {
           <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-neutral-200 animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black text-[#080512]">Log Meal / Snack</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">
+              <button onClick={closeModal} className="p-1 rounded-full hover:bg-neutral-100">
                 <X className="w-5 h-5 text-neutral-500" />
               </button>
             </div>
@@ -349,10 +373,17 @@ export const UserNutritionPage: React.FC = () => {
                 </div>
               </div>
 
+              {formError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {formError}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
               >
                 {submitting ? 'Adding...' : 'Record Meal'}
               </button>

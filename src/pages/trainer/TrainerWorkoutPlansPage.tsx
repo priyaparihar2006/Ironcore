@@ -28,8 +28,9 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      const res = await apiRequest<{ plans: WorkoutPlanTemplate[] }>('/trainer/workout-plans');
-      setPlans(res.plans || []);
+      // Backend key is `workoutPlans` (see server/api.ts GET /trainer/workouts).
+      const res = await apiRequest<{ workoutPlans: WorkoutPlanTemplate[] }>('/trainer/workouts');
+      setPlans(res.workoutPlans || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -66,7 +67,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
 
     setCreating(true);
     try {
-      await apiRequest('/trainer/workout-plans', {
+      await apiRequest('/trainer/workouts', {
         method: 'POST',
         body: JSON.stringify({
           title,

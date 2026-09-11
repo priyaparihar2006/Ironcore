@@ -1,7 +1,12 @@
 import { WorkoutProgram, Trainer, FeatureItem, PricingPlan, MemberTestimonial, Achievement } from '../types';
 
-export const HERO_ATHLETE_IMAGE = '/src/assets/images/hero_athlete_1788503359471.jpg';
-export const TRAINER_ALEX_IMAGE = '/src/assets/images/trainer_alex_1788503377896.jpg';
+import heroAthleteImage from '../assets/images/hero_athlete_1788503359471.jpg';
+import trainerAlexImage from '../assets/images/trainer_alex_1788503377896.jpg';
+
+
+export const HERO_ATHLETE_IMAGE = heroAthleteImage;
+
+export const TRAINER_ALEX_IMAGE = trainerAlexImage;
 
 export const WORKOUT_PROGRAMS: WorkoutProgram[] = [
   {
@@ -334,7 +339,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       'Weekly customized bloodwork & bio-metric review',
       'Reserved private executive locker & laundry service',
       'Daily complimentary pre-workout & whey shake bar',
-      '24/7 direct WhatsApp concierge line with Head Coach',
+      '24/7 direct WApp concierge line with Head Coach',
       'Unlimited multi-city IronCore club roaming'
     ]
   }
