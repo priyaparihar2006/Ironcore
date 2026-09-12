@@ -55,10 +55,17 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
 
         </div>
 
-        {/* Right Column: Hero Graphic with Pastel Backdrop Card & Floating Metrics */}
-        <div className="lg:col-span-6 relative flex items-center justify-center">
+        {/* Right Column: Hero Graphic with Pastel Backdrop Card & Metrics.
+            Below `lg` there isn't reliably enough room for four independently
+            floating cards not to collide, so they render as a plain, static
+            2-col grid under the image instead (mobile AND tablet — a grid can
+            never overlap by construction). At `lg`+ the original absolute
+            floating composition — sized for the roughly fixed-width column
+            that only exists once the layout splits into two columns — is
+            preserved exactly as designed. */}
+        <div className="lg:col-span-6 flex flex-col items-center justify-center gap-6 sm:gap-8">
           <div className="relative w-full max-w-[480px] sm:max-w-[540px] h-[520px] sm:h-[600px] flex items-center justify-center">
-            
+
             {/* Pastel Inner Panel from Design */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[420px] h-[460px] sm:h-[550px] bg-gradient-to-b from-indigo-100 via-pink-100 to-cyan-50 rounded-[40px] shadow-inner" />
 
@@ -75,51 +82,51 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
               </div>
             </div>
 
-            {/* Floating Metric 1: Calories (Top Left) */}
-            <div className="absolute top-12 -left-3 sm:top-16 sm:-left-8 bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-[24px] shadow-2xl border border-white/50 w-38 sm:w-44 z-20 transition-transform hover:scale-105 duration-200">
-              <div className="flex items-center gap-2.5 sm:gap-3 mb-2">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 text-lg sm:text-xl">
+            {/* Floating Metric 1: Calories (Top Left) — desktop/laptop only */}
+            <div className="hidden lg:block absolute top-16 -left-8 bg-white/90 backdrop-blur-xl p-5 rounded-[24px] shadow-2xl border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 text-xl">
                   🔥
                 </div>
-                <div className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider uppercase">
+                <div className="text-xs font-bold text-gray-400 tracking-wider uppercase">
                   CALORIES
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-[#080512]">
+              <div className="text-2xl font-black text-[#080512]">
                 1,200 <span className="text-xs font-bold opacity-40">kcal</span>
               </div>
             </div>
 
-            {/* Floating Metric 2: Strength (Bottom Right) */}
-            <div className="absolute bottom-20 -right-2 sm:bottom-28 sm:-right-8 bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-[24px] shadow-2xl border border-white/50 w-38 sm:w-44 z-20 transition-transform hover:scale-105 duration-200">
-              <div className="flex items-center gap-2.5 sm:gap-3 mb-2">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 text-lg sm:text-xl">
+            {/* Floating Metric 2: Strength (Bottom Right) — desktop/laptop only */}
+            <div className="hidden lg:block absolute bottom-28 -right-8 bg-white/90 backdrop-blur-xl p-5 rounded-[24px] shadow-2xl border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 text-xl">
                   🏋️
                 </div>
-                <div className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider uppercase">
+                <div className="text-xs font-bold text-gray-400 tracking-wider uppercase">
                   STRENGTH
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-[#080512]">
+              <div className="text-2xl font-black text-[#080512]">
                 +24% <span className="text-xs text-emerald-500 font-bold">↑</span>
               </div>
             </div>
 
-            {/* Floating Metric 3: Daily Steps (Right Center) */}
-            <div className="absolute top-1/2 -right-1 sm:right-2 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl shadow-xl border border-white/50 flex items-center gap-3 sm:gap-4 z-20 transition-transform hover:scale-105 duration-200">
-              <div className="w-2 h-9 sm:h-10 bg-emerald-400 rounded-full" />
+            {/* Floating Metric 3: Daily Steps (Right Center) — desktop/laptop only */}
+            <div className="hidden lg:flex absolute top-1/2 right-2 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-white/50 items-center gap-4 z-20 transition-transform hover:scale-105 duration-200">
+              <div className="w-2 h-10 bg-emerald-400 rounded-full" />
               <div>
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   DAILY STEPS
                 </div>
-                <div className="text-base sm:text-lg font-black text-[#080512]">
+                <div className="text-lg font-black text-[#080512]">
                   11,980
                 </div>
               </div>
             </div>
 
-            {/* Floating Metric 4: Weight (Bottom Left) */}
-            <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-6 bg-white/90 backdrop-blur-xl p-3 sm:p-4 rounded-2xl shadow-xl border border-white/50 flex items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
+            {/* Floating Metric 4: Weight (Bottom Left) — desktop/laptop only */}
+            <div className="hidden lg:flex absolute bottom-8 left-6 bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-white/50 items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
               <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-base">
                 ⚖️
               </div>
@@ -127,7 +134,72 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   TARGET WEIGHT
                 </div>
-                <div className="text-sm sm:text-base font-black text-[#080512]">
+                <div className="text-base font-black text-[#080512]">
+                  70 <span className="text-xs font-semibold opacity-40">kg</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Metric Grid — mobile & tablet only (below lg). Static, in normal
+              document flow, so cards can never overlap each other or the
+              image regardless of viewport width. */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-[480px] sm:max-w-[540px] lg:hidden">
+
+            {/* Calories */}
+            <div className="w-full min-w-0 bg-white/90 backdrop-blur-xl p-3 sm:p-5 rounded-[24px] shadow-2xl border border-white/50 transition-transform hover:scale-105 duration-200">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 text-lg sm:text-xl">
+                  🔥
+                </div>
+                <div className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider uppercase truncate">
+                  CALORIES
+                </div>
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-[#080512] truncate">
+                1,200 <span className="text-xs font-bold opacity-40">kcal</span>
+              </div>
+            </div>
+
+            {/* Daily Steps */}
+            <div className="w-full min-w-0 bg-white/90 backdrop-blur-xl p-3 sm:p-4 rounded-2xl shadow-xl border border-white/50 flex items-center gap-2.5 sm:gap-4 transition-transform hover:scale-105 duration-200">
+              <div className="w-2 h-8 sm:h-10 shrink-0 bg-emerald-400 rounded-full" />
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
+                  DAILY STEPS
+                </div>
+                <div className="text-sm sm:text-lg font-black text-[#080512] truncate">
+                  11,980
+                </div>
+              </div>
+            </div>
+
+            {/* Strength */}
+            <div className="w-full min-w-0 bg-white/90 backdrop-blur-xl p-3 sm:p-5 rounded-[24px] shadow-2xl border border-white/50 transition-transform hover:scale-105 duration-200">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 text-lg sm:text-xl">
+                  🏋️
+                </div>
+                <div className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider uppercase truncate">
+                  STRENGTH
+                </div>
+              </div>
+              <div className="text-lg sm:text-2xl font-black text-[#080512] truncate">
+                +24% <span className="text-xs text-emerald-500 font-bold">↑</span>
+              </div>
+            </div>
+
+            {/* Target Weight */}
+            <div className="w-full min-w-0 bg-white/90 backdrop-blur-xl p-3 sm:p-4 rounded-2xl shadow-xl border border-white/50 flex items-center gap-2.5 sm:gap-3 transition-transform hover:scale-105 duration-200">
+              <div className="w-8 h-8 shrink-0 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-base">
+                ⚖️
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
+                  TARGET WEIGHT
+                </div>
+                <div className="text-sm sm:text-base font-black text-[#080512] truncate">
                   70 <span className="text-xs font-semibold opacity-40">kg</span>
                 </div>
               </div>
