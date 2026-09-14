@@ -1,4 +1,5 @@
 import express, { Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
@@ -25,6 +26,51 @@ import {
 
 export const apiRouter = express.Router();
 
+// ==========================================
+// RATE LIMITING — sensitive auth endpoints only. Limits are configurable via
+// env vars (with sensible defaults) so they can be tuned per deployment
+// without a code change. Normal authenticated API usage elsewhere is
+// untouched — these apply only to login/register/forgot-password.
+// ==========================================
+function envInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const rateLimitMessage = { error: 'Too many attempts. Please try again later.' };
+
+// Login: the most sensitive — strictest limit, protects against brute-forcing
+// a known account's password.
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: envInt('LOGIN_RATE_LIMIT_MAX', 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitMessage,
+});
+
+// Register: protects against automated mass account creation.
+const registerRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: envInt('REGISTER_RATE_LIMIT_MAX', 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitMessage,
+});
+
+// Forgot-password: strict — this endpoint deliberately behaves identically
+// for existing/non-existing accounts, but without a limit it could still be
+// used to hammer the token-generation code path or probe for timing
+// differences.
+const forgotPasswordRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: envInt('FORGOT_PASSWORD_RATE_LIMIT_MAX', 5),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitMessage,
+});
+
 // Helper to remove passwordHash from user object
 function sanitizeUser(user: User): Omit<User, 'passwordHash'> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -37,7 +83,7 @@ function sanitizeUser(user: User): Omit<User, 'passwordHash'> {
 // ==========================================
 
 // Register (Normal users ALWAYS receive USER role)
-apiRouter.post('/auth/register', async (req, res: Response): Promise<void> => {
+apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response): Promise<void> => {
   try {
     const {
       name,
@@ -158,7 +204,7 @@ apiRouter.post('/auth/register', async (req, res: Response): Promise<void> => {
 });
 
 // Login
-apiRouter.post('/auth/login', async (req, res: Response): Promise<void> => {
+apiRouter.post('/auth/login', loginRateLimiter, async (req, res: Response): Promise<void> => {
   try {
     const { email, password, rememberMe } = req.body;
 
@@ -317,9 +363,25 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
 });
 
 // Forgot Password
-apiRouter.post('/auth/forgot-password', (req, res: Response): void => {
+//
+// SECURITY: this endpoint must never reveal whether an email address belongs
+// to a real account, and must never return the reset token/URL in the API
+// response, in logs, or in error messages — doing so would let anyone reset
+// any account just by knowing its email address. Both branches below return
+// the exact same generic message with no distinguishing information.
+//
+// TODO(production): no email-delivery mechanism exists yet in this project.
+// The token below is generated and stored server-side (so /auth/reset-password
+// keeps working once a user has a valid token), but nothing currently sends
+// it anywhere. Wire up a real transactional email provider (e.g. SES, Postmark,
+// Resend) here before this flow can actually reach real users — until then,
+// password reset is effectively inert for real users, which is the safe
+// default (never fake email delivery, never leak the token as a workaround).
+apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, (req, res: Response): void => {
   const { email } = req.body;
-  if (!email) {
+  const GENERIC_MESSAGE = 'If an account exists with this email, a password reset link has been sent.';
+
+  if (!email || typeof email !== 'string') {
     res.status(400).json({ error: 'Email address is required.' });
     return;
   }
@@ -327,27 +389,22 @@ apiRouter.post('/auth/forgot-password', (req, res: Response): void => {
   const db = getDatabase();
   const user = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
 
-  if (!user) {
-    // For security, do not leak whether user exists, return friendly confirmation
-    res.json({
-      message: 'If an account exists with this email, a password reset link has been dispatched.',
-      token: null,
-    });
-    return;
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + 1000 * 60 * 60; // 1 hour
+
+    db.passwordResetTokens = db.passwordResetTokens.filter((t) => t.email !== user.email);
+    db.passwordResetTokens.push({ token, email: user.email, expiresAt });
+    saveDatabase(db);
+
+    // Intentionally not logged and not returned: the token must never appear
+    // anywhere outside the database record itself and (once implemented) the
+    // email sent directly to the account owner.
   }
 
-  const token = crypto.randomBytes(24).toString('hex');
-  const expiresAt = Date.now() + 1000 * 60 * 60; // 1 hour
-
-  db.passwordResetTokens = db.passwordResetTokens.filter((t) => t.email !== user.email);
-  db.passwordResetTokens.push({ token, email: user.email, expiresAt });
-  saveDatabase(db);
-
-  res.json({
-    message: 'Password reset link dispatched.',
-    token, // Provided for instant demo/testing convenience
-    resetUrl: `/reset-password?token=${token}&email=${encodeURIComponent(user.email)}`,
-  });
+  // Same response whether or not the account exists, and whether or not a
+  // token was just generated — this is what prevents user enumeration.
+  res.json({ message: GENERIC_MESSAGE });
 });
 
 // Reset Password
@@ -756,6 +813,19 @@ apiRouter.get('/user/membership', authMiddleware, (req: AuthenticatedRequest, re
 });
 
 // Upgrade Membership
+//
+// IMPORTANT: no real payment gateway is integrated in this project. This
+// endpoint is a manual/demo billing flow — it activates the membership
+// immediately and records it, but no card is charged and no money actually
+// changes hands. The payment record below reflects that honestly (no fake
+// card details); it should not be read as evidence of a real transaction.
+//
+// TODO(production): before accepting real online payments, integrate a real
+// payment gateway (e.g. Stripe, Razorpay) here: create a charge/order with
+// the gateway, verify the payment server-side via its webhook/API, and only
+// then activate the membership and record a payment — mirroring this same
+// membership-activation logic, but driven by a verified gateway event rather
+// than the client simply calling this endpoint.
 apiRouter.post('/user/membership/upgrade', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   const { planId, billingCycle } = req.body;
   const db = getDatabase();
@@ -804,9 +874,10 @@ apiRouter.post('/user/membership/upgrade', authMiddleware, (req: AuthenticatedRe
     status: 'PAID',
     date: startDate,
     description: `IronCore ${plan.name} Membership - ${cycle === 'annual' ? 'Annual' : 'Monthly'} Subscription`,
-    invoiceNumber: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     planName: plan.name,
-    method: 'Primary Card •••• 4242',
+    // Honest label — no real card was charged. See the TODO above this route.
+    method: 'Manual activation (no payment gateway configured)',
   });
 
   saveDatabase(db);
@@ -977,6 +1048,12 @@ apiRouter.get(
       return;
     }
 
+    // A trainer may only view clients assigned to them; ADMIN can view anyone.
+    if (req.user!.role !== 'ADMIN' && client.assignedTrainerId !== req.user!.id) {
+      res.status(403).json({ error: 'You are not authorized to view this client.' });
+      return;
+    }
+
     const profile = db.profiles.find((p) => p.userId === client.id);
     const workouts = db.workoutAssignments.filter((w) => w.userId === client.id);
     const progress = db.progressRecords.filter((p) => p.userId === client.id);
@@ -1007,6 +1084,18 @@ apiRouter.post(
     }
 
     const db = getDatabase();
+    const client = db.users.find((u) => u.id === req.params.id);
+    if (!client) {
+      res.status(404).json({ error: 'Client not found.' });
+      return;
+    }
+
+    // Same ownership rule as GET /trainer/clients/:id.
+    if (req.user!.role !== 'ADMIN' && client.assignedTrainerId !== req.user!.id) {
+      res.status(403).json({ error: 'You are not authorized to add notes for this client.' });
+      return;
+    }
+
     const newNote = {
       id: `note_${Date.now()}`,
       trainerId: req.user!.id,
@@ -1172,9 +1261,13 @@ apiRouter.get(
     const totalUsers = db.users.length;
     const activeMembers = db.users.filter((u) => u.role === 'USER' && u.status === 'ACTIVE').length;
     const activeTrainers = db.trainers.length;
+    // Real, all-time sum of recorded payments — no fabricated fallback. See the
+    // TODO on POST /user/membership/upgrade: until a real payment gateway is
+    // integrated, this reflects membership-upgrade actions the app recorded,
+    // not verified real-world transactions.
     const totalRevenue = db.payments
       .filter((p) => p.status === 'PAID')
-      .reduce((acc, curr) => acc + curr.amount, 0) || 54200;
+      .reduce((acc, curr) => acc + curr.amount, 0);
 
     const recentUsers = db.users.slice(0, 5).map((u) => {
       const prof = db.profiles.find((p) => p.userId === u.id);
@@ -1214,7 +1307,10 @@ apiRouter.get(
         activeMembers,
         totalRevenue,
         activeTrainers,
-        todayCheckins: 142,
+        // No check-in/attendance tracking exists in the current schema (no
+        // such table/records) — truthfully 0 rather than a fabricated number.
+        // Implement real check-in tracking before this can be meaningful.
+        todayCheckins: 0,
       },
       recentUsers,
       recentPayments,
@@ -1229,32 +1325,56 @@ apiRouter.get(
   requireRole(['ADMIN']),
   (_req, res: Response): void => {
     const db = getDatabase();
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const todayStr = now.toISOString().split('T')[0];
+    const in30Days = new Date(now);
+    in30Days.setDate(in30Days.getDate() + 30);
+    const in30DaysStr = in30Days.toISOString().split('T')[0];
 
     const totalUsers = db.users.length;
     const activeMembers = db.users.filter((u) => u.role === 'USER' && u.status === 'ACTIVE').length;
     const totalTrainers = db.trainers.length;
+
+    // Real revenue for the CURRENT calendar month only (not all-time — see
+    // /admin/overview's totalRevenue for the all-time figure). Same caveat as
+    // there: reflects recorded membership-upgrade actions, not a verified
+    // real-world payment gateway until one is integrated (see the TODO on
+    // POST /user/membership/upgrade).
     const monthlyRevenue = db.payments
-      .filter((p) => p.status === 'PAID')
+      .filter((p) => p.status === 'PAID' && p.date?.slice(0, 7) === currentMonthKey)
       .reduce((acc, curr) => acc + curr.amount, 0);
 
+    const newRegistrationsThisMonth = db.users.filter(
+      (u) => u.joinedDate?.slice(0, 7) === currentMonthKey
+    ).length;
+
     const activeMemberships = db.userMemberships.filter((m) => m.status === 'ACTIVE').length;
-    const expiringMemberships = db.userMemberships.filter((m) => m.status === 'EXPIRED').length;
+    // "Expiring" = active memberships whose real expiryDate falls within the
+    // next 30 days — computed from actual dates, not a status the app never
+    // actually sets (nothing transitions a membership to 'EXPIRED' over time).
+    const expiringMemberships = db.userMemberships.filter(
+      (m) => m.status === 'ACTIVE' && m.expiryDate >= todayStr && m.expiryDate <= in30DaysStr
+    ).length;
     const upcomingSessions = db.bookings.filter((b) => b.status === 'CONFIRMED').length;
 
-    // Growth charts data
-    const userGrowth = [
-      { month: 'Apr', users: 840, revenue: 42000 },
-      { month: 'May', users: 950, revenue: 48500 },
-      { month: 'Jun', users: 1120, revenue: 56200 },
-      { month: 'Jul', users: 1340, revenue: 64800 },
-      { month: 'Aug', users: 1580, revenue: 74200 },
-      { month: 'Sep', users: totalUsers * 120, revenue: monthlyRevenue + 82000 },
-    ];
+    // Growth chart: real cumulative registered-user counts and real per-month
+    // revenue for each of the last 6 calendar months, computed from actual
+    // User.joinedDate / PaymentRecord.date values — no invented numbers.
+    const userGrowth = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const cumulativeUsers = db.users.filter((u) => u.joinedDate && u.joinedDate.slice(0, 7) <= key).length;
+      const revenueThatMonth = db.payments
+        .filter((p) => p.status === 'PAID' && p.date?.slice(0, 7) === key)
+        .reduce((acc, curr) => acc + curr.amount, 0);
+      return { month: d.toLocaleString('en-US', { month: 'short' }), users: cumulativeUsers, revenue: revenueThatMonth };
+    });
 
     const membershipDistribution = [
-      { name: 'Basic', count: db.userMemberships.filter((m) => m.planName.includes('Basic')).length || 18 },
-      { name: 'Pro', count: db.userMemberships.filter((m) => m.planName.includes('Pro')).length || 42 },
-      { name: 'Elite', count: db.userMemberships.filter((m) => m.planName.includes('Elite')).length || 24 },
+      { name: 'Basic', count: db.userMemberships.filter((m) => m.planName.includes('Basic')).length },
+      { name: 'Pro', count: db.userMemberships.filter((m) => m.planName.includes('Pro')).length },
+      { name: 'Elite', count: db.userMemberships.filter((m) => m.planName.includes('Elite')).length },
     ];
 
     res.json({
@@ -1262,10 +1382,10 @@ apiRouter.get(
         totalUsers,
         activeMembers,
         totalTrainers,
-        monthlyRevenue: 84500,
-        newRegistrationsThisMonth: 128,
+        monthlyRevenue,
+        newRegistrationsThisMonth,
         activeMemberships,
-        expiringMemberships: 4,
+        expiringMemberships,
         upcomingSessions,
       },
       charts: {
@@ -1409,10 +1529,32 @@ apiRouter.delete(
       return;
     }
 
+    const deletedUserId = req.params.id;
+
     db.users.splice(index, 1);
-    db.profiles = db.profiles.filter((p) => p.userId !== req.params.id);
-    db.userMemberships = db.userMemberships.filter((m) => m.userId !== req.params.id);
-    db.workoutAssignments = db.workoutAssignments.filter((w) => w.userId !== req.params.id);
+    db.profiles = db.profiles.filter((p) => p.userId !== deletedUserId);
+    db.userMemberships = db.userMemberships.filter((m) => m.userId !== deletedUserId);
+    db.workoutAssignments = db.workoutAssignments.filter((w) => w.userId !== deletedUserId);
+    // Personal records tied only to this user — safe to remove outright.
+    db.bookings = db.bookings.filter((b) => b.userId !== deletedUserId);
+    db.notifications = db.notifications.filter((n) => n.userId !== deletedUserId);
+    db.nutritionLogs = db.nutritionLogs.filter((n) => n.userId !== deletedUserId);
+    db.progressRecords = db.progressRecords.filter((p) => p.userId !== deletedUserId);
+    db.trainerNotes = db.trainerNotes.filter(
+      (n) => n.userId !== deletedUserId && n.trainerId !== deletedUserId
+    );
+    // Financial/audit records are intentionally KEPT (not deleted) even though
+    // the user account is gone — payment history is an audit trail, not a
+    // per-account convenience record, so it should outlive account deletion.
+    // db.payments is deliberately left untouched here.
+
+    // If the deleted account was a trainer, remove their trainer profile and
+    // un-assign any clients that pointed to them (otherwise those clients
+    // would reference a trainer id that no longer exists).
+    db.trainers = db.trainers.filter((t) => t.userId !== deletedUserId);
+    db.users.forEach((u) => {
+      if (u.assignedTrainerId === deletedUserId) u.assignedTrainerId = undefined;
+    });
 
     saveDatabase(db);
     res.json({ message: 'User deleted successfully.' });
@@ -1442,6 +1584,14 @@ apiRouter.post(
         res.status(400).json({ error: 'Name and email are required.' });
         return;
       }
+      // No shared default password (e.g. the old hardcoded 'TrainerPassword123!')
+      // — every trainer account must be created with its own explicit password.
+      if (!password || typeof password !== 'string' || password.length < 8) {
+        res.status(400).json({
+          error: 'A password (at least 8 characters) is required to create a trainer account.',
+        });
+        return;
+      }
 
       const db = getDatabase();
       const existing = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
@@ -1450,7 +1600,7 @@ apiRouter.post(
         return;
       }
 
-      const passwordHash = await bcrypt.hash(password || 'TrainerPassword123!', 10);
+      const passwordHash = await bcrypt.hash(password, 10);
       const userId = `user_trainer_${Date.now()}`;
 
       const newTrainerUser: User = {

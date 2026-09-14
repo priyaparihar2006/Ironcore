@@ -670,6 +670,41 @@ export function generateSeedData(): DatabaseSchema {
 
 let dbCache: DatabaseSchema | null = null;
 
+// An empty, valid DatabaseSchema — used instead of generateSeedData() when
+// demo seeding is disabled (see shouldSeedDemoData() below), so a fresh
+// production database starts genuinely empty rather than silently gaining
+// the built-in demo accounts (published passwords like AdminPassword123!).
+function emptyDatabase(): DatabaseSchema {
+  return {
+    users: [],
+    profiles: [],
+    trainers: [],
+    workoutPlans: [],
+    workoutAssignments: [],
+    progressRecords: [],
+    nutritionLogs: [],
+    membershipPlans: [],
+    userMemberships: [],
+    bookings: [],
+    payments: [],
+    notifications: [],
+    trainerNotes: [],
+    passwordResetTokens: [],
+  };
+}
+
+// Demo/seed data (built-in accounts like admin@ironcore.fit /
+// AdminPassword123!) is only ever created automatically when the database is
+// completely empty AND this returns true. Enabled by default in development
+// (so `npm run dev` keeps working out of the box); in production it requires
+// explicitly setting SEED_DEMO_DATA=true, so a real deployment never silently
+// gains publicly-known demo credentials.
+function shouldSeedDemoData(): boolean {
+  const flag = process.env.SEED_DEMO_DATA;
+  if (flag !== undefined) return flag.trim().toLowerCase() === 'true';
+  return process.env.NODE_ENV !== 'production';
+}
+
 // Storage is SQLite (see server/sqlite.ts) — data/ironcore.db. The rest of the
 // app still works exactly like it did against the JSON file: getDatabase()
 // returns one shared in-memory object that routes read and mutate directly;
@@ -677,16 +712,29 @@ let dbCache: DatabaseSchema | null = null;
 // call to getDatabase() also runs the one-time, idempotent JSON->SQLite
 // migration if data/ironcore.db is empty and data/ironcore_db.json exists
 // (see migrateFromJsonIfNeeded in server/sqlite.ts) — the JSON file is only
-// ever read, never modified or deleted by this.
+// ever read, never modified or deleted by this. If neither SQLite nor the
+// JSON file has data yet, falls back to the built-in seed data ONLY when
+// shouldSeedDemoData() allows it; otherwise starts from a genuinely empty
+// database.
 export function getDatabase(): DatabaseSchema {
   if (dbCache) return dbCache;
 
-  const result = migrateFromJsonIfNeeded(generateSeedData);
+  const seedAllowed = shouldSeedDemoData();
+  const result = migrateFromJsonIfNeeded(seedAllowed ? generateSeedData : emptyDatabase);
+
   if (result.ranMigration) {
-    console.log(
-      `[db] Migrated data into SQLite from ${result.source === 'json' ? 'data/ironcore_db.json' : 'built-in seed data'}:`,
-      result.counts
-    );
+    if (result.source === 'seed' && !seedAllowed) {
+      console.log(
+        '[db] No existing data found — starting with an EMPTY database ' +
+          '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
+          'once to create the built-in demo accounts instead.'
+      );
+    } else {
+      console.log(
+        `[db] Migrated data into SQLite from ${result.source === 'json' ? 'data/ironcore_db.json' : 'built-in seed data'}:`,
+        result.counts
+      );
+    }
   }
 
   dbCache = hydrateAll();

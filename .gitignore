@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local/runtime database files — never commit real user data or WAL state
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/ironcore_db.json
+data_backup/
