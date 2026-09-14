@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { hydrateAll, persistAll, migrateFromJsonIfNeeded } from './sqlite.js';
+import { hydrateAll, persistAll, seedIfEmpty } from './postgres.js';
 import type {
   User,
   UserProfile,
@@ -705,47 +705,49 @@ function shouldSeedDemoData(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-// Storage is SQLite (see server/sqlite.ts) — data/ironcore.db. The rest of the
-// app still works exactly like it did against the JSON file: getDatabase()
+// Storage is PostgreSQL/Supabase (see server/postgres.ts). The rest of the
+// app still works exactly like it did against SQLite/JSON: getDatabase()
 // returns one shared in-memory object that routes read and mutate directly;
-// saveDatabase() persists whatever's in that object back to disk. The first
-// call to getDatabase() also runs the one-time, idempotent JSON->SQLite
-// migration if data/ironcore.db is empty and data/ironcore_db.json exists
-// (see migrateFromJsonIfNeeded in server/sqlite.ts) — the JSON file is only
-// ever read, never modified or deleted by this. If neither SQLite nor the
-// JSON file has data yet, falls back to the built-in seed data ONLY when
-// shouldSeedDemoData() allows it; otherwise starts from a genuinely empty
-// database.
-export function getDatabase(): DatabaseSchema {
+// saveDatabase() persists whatever's in that object back to Postgres. The
+// first call to getDatabase() also seeds the database (via seedIfEmpty in
+// server/postgres.ts) ONLY when it's completely empty — falling back to the
+// built-in seed data when shouldSeedDemoData() allows it, otherwise starting
+// from a genuinely empty database. Existing data (e.g. migrated from SQLite
+// via `npm run migrate:postgres`) is never touched by this.
+let dbPromise: Promise<DatabaseSchema> | null = null;
+
+export async function getDatabase(): Promise<DatabaseSchema> {
   if (dbCache) return dbCache;
+  if (dbPromise) return dbPromise;
 
-  const seedAllowed = shouldSeedDemoData();
-  const result = migrateFromJsonIfNeeded(seedAllowed ? generateSeedData : emptyDatabase);
+  dbPromise = (async () => {
+    const seedAllowed = shouldSeedDemoData();
+    const result = await seedIfEmpty(seedAllowed ? generateSeedData : emptyDatabase);
 
-  if (result.ranMigration) {
-    if (result.source === 'seed' && !seedAllowed) {
-      console.log(
-        '[db] No existing data found — starting with an EMPTY database ' +
-          '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
-          'once to create the built-in demo accounts instead.'
-      );
-    } else {
-      console.log(
-        `[db] Migrated data into SQLite from ${result.source === 'json' ? 'data/ironcore_db.json' : 'built-in seed data'}:`,
-        result.counts
-      );
+    if (result.ranSeed) {
+      if (!seedAllowed) {
+        console.log(
+          '[db] No existing data found — starting with an EMPTY database ' +
+            '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
+            'once to create the built-in demo accounts instead.'
+        );
+      } else {
+        console.log('[db] No existing data found — seeded PostgreSQL with built-in demo data:', result.counts);
+      }
     }
-  }
 
-  dbCache = hydrateAll();
-  return dbCache;
+    dbCache = await hydrateAll();
+    return dbCache;
+  })();
+
+  return dbPromise;
 }
 
-export function saveDatabase(data: DatabaseSchema): void {
+export async function saveDatabase(data: DatabaseSchema): Promise<void> {
   dbCache = data;
   try {
-    persistAll(data);
+    await persistAll(data);
   } catch (e) {
-    console.error('Failed to write SQLite database:', e);
+    console.error('Failed to write PostgreSQL database:', e);
   }
 }

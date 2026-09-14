@@ -117,7 +117,7 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
 
     // Check duplicate email
     const existing = db.users.find(
@@ -188,7 +188,7 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
     db.profiles.push(newProfile);
     db.userMemberships.push(newMembership);
 
-    saveDatabase(db);
+    await saveDatabase(db);
 
     const token = generateToken(newUser, false);
 
@@ -213,7 +213,7 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req, res: Response): Prom
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = db.users.find(
       (u) => u.email.toLowerCase() === email.toLowerCase().trim()
     );
@@ -248,13 +248,13 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req, res: Response): Prom
 });
 
 // Logout
-apiRouter.post('/auth/logout', (_req, res: Response): void => {
+apiRouter.post('/auth/logout', async (_req, res: Response): Promise<void> => {
   res.json({ message: 'Signed out successfully.' });
 });
 
 // Current User Profile & Membership
-apiRouter.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/auth/me', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const user = req.user!;
   const profile = db.profiles.find((p) => p.userId === user.id) || null;
   const membership = db.userMemberships.find((m) => m.userId === user.id && m.status === 'ACTIVE') || null;
@@ -267,8 +267,8 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res: Respo
 });
 
 // Update Profile
-apiRouter.put('/auth/profile', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.put('/auth/profile', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const user = req.user!;
   const {
     name,
@@ -316,7 +316,7 @@ apiRouter.put('/auth/profile', authMiddleware, (req: AuthenticatedRequest, res: 
     if (bio !== undefined) profile.bio = bio;
   }
 
-  saveDatabase(db);
+  await saveDatabase(db);
 
   res.json({
     message: 'Profile updated successfully.',
@@ -339,7 +339,7 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const user = db.users.find((u) => u.id === req.user!.id);
     if (!user) {
       res.status(404).json({ error: 'User not found.' });
@@ -353,7 +353,7 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
     }
 
     user.passwordHash = await bcrypt.hash(newPassword, 10);
-    saveDatabase(db);
+    await saveDatabase(db);
 
     res.json({ message: 'Password changed successfully.' });
   } catch (error) {
@@ -377,7 +377,7 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
 // Resend) here before this flow can actually reach real users — until then,
 // password reset is effectively inert for real users, which is the safe
 // default (never fake email delivery, never leak the token as a workaround).
-apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, (req, res: Response): void => {
+apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, async (req, res: Response): Promise<void> => {
   const { email } = req.body;
   const GENERIC_MESSAGE = 'If an account exists with this email, a password reset link has been sent.';
 
@@ -386,7 +386,7 @@ apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, (req, res: Re
     return;
   }
 
-  const db = getDatabase();
+  const db = await getDatabase();
   const user = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
 
   if (user) {
@@ -395,7 +395,7 @@ apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, (req, res: Re
 
     db.passwordResetTokens = db.passwordResetTokens.filter((t) => t.email !== user.email);
     db.passwordResetTokens.push({ token, email: user.email, expiresAt });
-    saveDatabase(db);
+    await saveDatabase(db);
 
     // Intentionally not logged and not returned: the token must never appear
     // anywhere outside the database record itself and (once implemented) the
@@ -416,7 +416,7 @@ apiRouter.post('/auth/reset-password', async (req, res: Response): Promise<void>
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const record = db.passwordResetTokens.find(
       (t) => t.token === token && (!email || t.email.toLowerCase() === email.toLowerCase())
     );
@@ -435,7 +435,7 @@ apiRouter.post('/auth/reset-password', async (req, res: Response): Promise<void>
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     // Remove consumed token
     db.passwordResetTokens = db.passwordResetTokens.filter((t) => t.token !== token);
-    saveDatabase(db);
+    await saveDatabase(db);
 
     res.json({ message: 'Password has been successfully reset. You can now sign in.' });
   } catch (error) {
@@ -493,8 +493,8 @@ function calculateWorkoutStreak(
 // Every value below is derived from the logged-in user's own records
 // (req.user!.id). Missing data returns null / 0 — never another user's data
 // and never invented demo numbers.
-apiRouter.get('/user/dashboard-summary', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/dashboard-summary', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const userId = req.user!.id;
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -579,17 +579,17 @@ apiRouter.get('/user/dashboard-summary', authMiddleware, (req: AuthenticatedRequ
 });
 
 // User Workouts
-apiRouter.get('/user/workouts', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/workouts', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const userId = req.user!.id;
   const assignments = db.workoutAssignments.filter((a) => a.userId === userId);
   res.json({ workouts: assignments, plans: db.workoutPlans });
 });
 
 // Mark Workout Complete
-apiRouter.post('/user/workouts/complete', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
+apiRouter.post('/user/workouts/complete', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { assignmentId } = req.body;
-  const db = getDatabase();
+  const db = await getDatabase();
   const assignment = db.workoutAssignments.find(
     (a) => a.id === assignmentId && a.userId === req.user!.id
   );
@@ -613,21 +613,21 @@ apiRouter.post('/user/workouts/complete', authMiddleware, (req: AuthenticatedReq
     type: 'success',
   });
 
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ message: 'Workout marked as complete!', assignment });
 });
 
 // User Progress
-apiRouter.get('/user/progress', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/progress', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const records = db.progressRecords.filter((p) => p.userId === req.user!.id);
   res.json({ records });
 });
 
 // Add Progress Entry
-apiRouter.post('/user/progress', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
+apiRouter.post('/user/progress', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { weightKg, caloriesBurned, steps, strengthScore, notes } = req.body;
-  const db = getDatabase();
+  const db = await getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Validate inputs — no fake fallbacks. Weight is required and must be sane;
@@ -676,7 +676,7 @@ apiRouter.post('/user/progress', authMiddleware, (req: AuthenticatedRequest, res
     profile.currentWeight = weight;
   }
 
-  saveDatabase(db);
+  await saveDatabase(db);
   res.status(201).json({ message: 'Progress record logged!', record: newRecord });
 });
 
@@ -702,8 +702,8 @@ function recalcNutritionTotals(log: NutritionLog): void {
 // Nutrition — today's log for the authenticated user. Read-only: if there is no
 // log yet we return an empty (zeroed) one WITHOUT saving it, so we never create
 // fake records just because someone opened the page.
-apiRouter.get('/user/nutrition', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/nutrition', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
   const log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
 
@@ -729,7 +729,7 @@ apiRouter.get('/user/nutrition', authMiddleware, (req: AuthenticatedRequest, res
 });
 
 // Add Meal — appends a real meal to today's log for the authenticated user.
-apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
+apiRouter.post('/user/nutrition/meals', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { type, name, calories, proteinGrams, carbsGrams, fatsGrams } = req.body;
 
   // Validate inputs — no fake fallbacks for the identifying fields.
@@ -759,7 +759,7 @@ apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedReque
     return;
   }
 
-  const db = getDatabase();
+  const db = await getDatabase();
   const todayStr = new Date().toISOString().split('T')[0];
   let log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
 
@@ -792,15 +792,15 @@ apiRouter.post('/user/nutrition/meals', authMiddleware, (req: AuthenticatedReque
   log.meals.push(newMeal);
   recalcNutritionTotals(log);
 
-  saveDatabase(db);
+  await saveDatabase(db);
   res.status(201).json({ message: 'Meal logged successfully!', meal: newMeal, nutrition: log });
 });
 
 // User Membership — the authenticated user's current membership (prefer the
 // ACTIVE one; otherwise fall back to their most recent so expired/cancelled
 // states can still be shown) plus the list of plans that can be switched to.
-apiRouter.get('/user/membership', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/membership', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const userId = req.user!.id;
 
   const mine = db.userMemberships
@@ -826,9 +826,9 @@ apiRouter.get('/user/membership', authMiddleware, (req: AuthenticatedRequest, re
 // then activate the membership and record a payment — mirroring this same
 // membership-activation logic, but driven by a verified gateway event rather
 // than the client simply calling this endpoint.
-apiRouter.post('/user/membership/upgrade', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
+apiRouter.post('/user/membership/upgrade', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { planId, billingCycle } = req.body;
-  const db = getDatabase();
+  const db = await getDatabase();
   const plan = db.membershipPlans.find((p) => p.id === planId);
 
   if (!plan) {
@@ -880,21 +880,21 @@ apiRouter.post('/user/membership/upgrade', authMiddleware, (req: AuthenticatedRe
     method: 'Manual activation (no payment gateway configured)',
   });
 
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ message: `Upgraded to ${plan.name} tier successfully!`, membership: newMembership });
 });
 
 // Bookings
-apiRouter.get('/user/bookings', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/bookings', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const userBookings = db.bookings.filter((b) => b.userId === req.user!.id);
   res.json({ bookings: userBookings, trainers: db.trainers });
 });
 
 // Book new session
-apiRouter.post('/user/bookings', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
+apiRouter.post('/user/bookings', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { trainerId, date, timeSlot, sessionType, notes } = req.body;
-  const db = getDatabase();
+  const db = await getDatabase();
   const trainer = db.trainers.find((t) => t.id === trainerId || t.userId === trainerId);
 
   if (!trainer) {
@@ -928,13 +928,13 @@ apiRouter.post('/user/bookings', authMiddleware, (req: AuthenticatedRequest, res
     type: 'info',
   });
 
-  saveDatabase(db);
+  await saveDatabase(db);
   res.status(201).json({ message: 'Session booked successfully!', booking: newBooking });
 });
 
 // Cancel Booking
-apiRouter.put('/user/bookings/:id/cancel', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.put('/user/bookings/:id/cancel', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const booking = db.bookings.find((b) => b.id === req.params.id && b.userId === req.user!.id);
 
   if (!booking) {
@@ -943,22 +943,22 @@ apiRouter.put('/user/bookings/:id/cancel', authMiddleware, (req: AuthenticatedRe
   }
 
   booking.status = 'CANCELLED';
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ message: 'Booking has been cancelled.', booking });
 });
 
 // Notifications
-apiRouter.get('/user/notifications', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.get('/user/notifications', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const notifs = db.notifications.filter((n) => n.userId === req.user!.id);
   res.json({ notifications: notifs });
 });
 
-apiRouter.put('/user/notifications/:id/read', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
-  const db = getDatabase();
+apiRouter.put('/user/notifications/:id/read', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const db = await getDatabase();
   const notif = db.notifications.find((n) => n.id === req.params.id && n.userId === req.user!.id);
   if (notif) notif.read = true;
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ message: 'Notification marked as read.' });
 });
 
@@ -971,8 +971,8 @@ apiRouter.get(
   '/trainer/summary',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
-    const db = getDatabase();
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const trainerId = req.user!.id;
 
     const trainerClients = db.users.filter(
@@ -1009,8 +1009,8 @@ apiRouter.get(
   '/trainer/clients',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
-    const db = getDatabase();
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const trainerId = req.user!.id;
     const clients = db.users.filter(
       (u) => u.assignedTrainerId === trainerId || req.user!.role === 'ADMIN'
@@ -1039,8 +1039,8 @@ apiRouter.get(
   '/trainer/clients/:id',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
-    const db = getDatabase();
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const client = db.users.find((u) => u.id === req.params.id);
 
     if (!client) {
@@ -1076,14 +1076,14 @@ apiRouter.post(
   '/trainer/clients/:id/notes',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { note, flag } = req.body;
     if (!note) {
       res.status(400).json({ error: 'Note text is required.' });
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const client = db.users.find((u) => u.id === req.params.id);
     if (!client) {
       res.status(404).json({ error: 'Client not found.' });
@@ -1106,7 +1106,7 @@ apiRouter.post(
     };
 
     db.trainerNotes.push(newNote);
-    saveDatabase(db);
+    await saveDatabase(db);
 
     res.status(201).json({ message: 'Progress note added!', note: newNote });
   }
@@ -1117,8 +1117,8 @@ apiRouter.get(
   '/trainer/workouts',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     res.json({ workoutPlans: db.workoutPlans });
   }
 );
@@ -1128,14 +1128,14 @@ apiRouter.post(
   '/trainer/workouts',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { title, category, level, durationMinutes, caloriesBurn, description, exercises } = req.body;
     if (!title || !exercises || !Array.isArray(exercises)) {
       res.status(400).json({ error: 'Title and exercises array are required.' });
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const newPlan: WorkoutPlan = {
       id: `plan_${Date.now()}`,
       title,
@@ -1149,7 +1149,7 @@ apiRouter.post(
     };
 
     db.workoutPlans.push(newPlan);
-    saveDatabase(db);
+    await saveDatabase(db);
 
     res.status(201).json({ message: 'Workout plan created!', plan: newPlan });
   }
@@ -1160,9 +1160,9 @@ apiRouter.post(
   '/trainer/assign-workout',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { clientId, workoutPlanId, scheduledDate, notes } = req.body;
-    const db = getDatabase();
+    const db = await getDatabase();
 
     const client = db.users.find((u) => u.id === clientId);
     const plan = db.workoutPlans.find((p) => p.id === workoutPlanId);
@@ -1197,7 +1197,7 @@ apiRouter.post(
       type: 'info',
     });
 
-    saveDatabase(db);
+    await saveDatabase(db);
     res.status(201).json({ message: 'Workout assigned to client!', assignment });
   }
 );
@@ -1207,8 +1207,8 @@ apiRouter.get(
   '/trainer/schedule',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
-    const db = getDatabase();
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const trainerId = req.user!.id;
     const sessions = db.bookings.filter(
       (b) => b.trainerId === trainerId || req.user!.role === 'ADMIN'
@@ -1223,7 +1223,7 @@ apiRouter.put(
   '/trainer/sessions/:id/status',
   authMiddleware,
   requireRole(['TRAINER', 'ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { status } = req.body;
     const allowedStatuses: Booking['status'][] = ['CONFIRMED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED'];
     if (!allowedStatuses.includes(status)) {
@@ -1231,7 +1231,7 @@ apiRouter.put(
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const booking = db.bookings.find(
       (b) => b.id === req.params.id && (b.trainerId === req.user!.id || req.user!.role === 'ADMIN')
     );
@@ -1241,7 +1241,7 @@ apiRouter.put(
     }
 
     booking.status = status;
-    saveDatabase(db);
+    await saveDatabase(db);
     res.json({ message: 'Session status updated.', session: booking });
   }
 );
@@ -1255,8 +1255,8 @@ apiRouter.get(
   '/admin/overview',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
 
     const totalUsers = db.users.length;
     const activeMembers = db.users.filter((u) => u.role === 'USER' && u.status === 'ACTIVE').length;
@@ -1323,8 +1323,8 @@ apiRouter.get(
   '/admin/analytics',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const now = new Date();
     const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const todayStr = now.toISOString().split('T')[0];
@@ -1401,8 +1401,8 @@ apiRouter.get(
   '/admin/users',
   authMiddleware,
   requireRole(['ADMIN']),
-  (req, res: Response): void => {
-    const db = getDatabase();
+  async (req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const { search, role, status } = req.query;
 
     let list = db.users.map((u) => {
@@ -1445,7 +1445,7 @@ apiRouter.post(
         return;
       }
 
-      const db = getDatabase();
+      const db = await getDatabase();
       const existing = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
       if (existing) {
         res.status(409).json({ error: 'Email already exists.' });
@@ -1475,7 +1475,7 @@ apiRouter.post(
         muscleMass: 35,
       });
 
-      saveDatabase(db);
+      await saveDatabase(db);
       res.status(201).json({ message: 'User created successfully!', user: sanitizeUser(newUser) });
     } catch (error) {
       console.error('Create user error:', error);
@@ -1489,8 +1489,8 @@ apiRouter.put(
   '/admin/users/:id',
   authMiddleware,
   requireRole(['ADMIN']),
-  (req, res: Response): void => {
-    const db = getDatabase();
+  async (req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const user = db.users.find((u) => u.id === req.params.id);
 
     if (!user) {
@@ -1506,7 +1506,7 @@ apiRouter.put(
     if (fitnessGoal !== undefined) user.fitnessGoal = fitnessGoal;
     if (assignedTrainerId !== undefined) user.assignedTrainerId = assignedTrainerId;
 
-    saveDatabase(db);
+    await saveDatabase(db);
     res.json({ message: 'User updated successfully.', user: sanitizeUser(user) });
   }
 );
@@ -1516,13 +1516,13 @@ apiRouter.delete(
   '/admin/users/:id',
   authMiddleware,
   requireRole(['ADMIN']),
-  (req: AuthenticatedRequest, res: Response): void => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     if (req.user!.id === req.params.id) {
       res.status(400).json({ error: 'You cannot delete your own admin account.' });
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const index = db.users.findIndex((u) => u.id === req.params.id);
     if (index === -1) {
       res.status(404).json({ error: 'User not found.' });
@@ -1556,7 +1556,7 @@ apiRouter.delete(
       if (u.assignedTrainerId === deletedUserId) u.assignedTrainerId = undefined;
     });
 
-    saveDatabase(db);
+    await saveDatabase(db);
     res.json({ message: 'User deleted successfully.' });
   }
 );
@@ -1566,8 +1566,8 @@ apiRouter.get(
   '/admin/trainers',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     res.json({ trainers: db.trainers });
   }
 );
@@ -1593,7 +1593,7 @@ apiRouter.post(
         return;
       }
 
-      const db = getDatabase();
+      const db = await getDatabase();
       const existing = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
       if (existing) {
         res.status(409).json({ error: 'A user with this email already exists.' });
@@ -1634,7 +1634,7 @@ apiRouter.post(
 
       db.users.push(newTrainerUser);
       db.trainers.push(newTrainerInfo);
-      saveDatabase(db);
+      await saveDatabase(db);
 
       res.status(201).json({ message: 'Trainer created successfully!', trainer: newTrainerInfo });
     } catch (error) {
@@ -1649,8 +1649,8 @@ apiRouter.put(
   '/admin/trainers/:id',
   authMiddleware,
   requireRole(['ADMIN']),
-  (req, res: Response): void => {
-    const db = getDatabase();
+  async (req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     const trainer = db.trainers.find((t) => t.id === req.params.id || t.userId === req.params.id);
 
     if (!trainer) {
@@ -1674,7 +1674,7 @@ apiRouter.put(
       if (status) user.status = status;
     }
 
-    saveDatabase(db);
+    await saveDatabase(db);
     res.json({ message: 'Trainer details updated successfully.', trainer });
   }
 );
@@ -1685,14 +1685,14 @@ apiRouter.post(
   '/admin/trainers/assign-client',
   authMiddleware,
   requireRole(['ADMIN']),
-  (req, res: Response): void => {
+  async (req, res: Response): Promise<void> => {
     const { trainerId, userId } = req.body;
     if (!trainerId || !userId) {
       res.status(400).json({ error: 'trainerId and userId are required.' });
       return;
     }
 
-    const db = getDatabase();
+    const db = await getDatabase();
     const trainer = db.trainers.find((t) => t.id === trainerId || t.userId === trainerId);
     if (!trainer) {
       res.status(404).json({ error: 'Trainer not found.' });
@@ -1706,7 +1706,7 @@ apiRouter.post(
     }
 
     client.assignedTrainerId = trainer.userId;
-    saveDatabase(db);
+    await saveDatabase(db);
 
     res.json({ message: `${client.name} assigned to ${trainer.name}.`, user: sanitizeUser(client) });
   }
@@ -1717,8 +1717,8 @@ apiRouter.get(
   '/admin/memberships',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     res.json({
       plans: db.membershipPlans,
       subscriptions: db.userMemberships.map((m) => {
@@ -1738,8 +1738,8 @@ apiRouter.get(
   '/admin/payments',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
-    const db = getDatabase();
+  async (_req, res: Response): Promise<void> => {
+    const db = await getDatabase();
     res.json({ payments: db.payments });
   }
 );
@@ -1749,7 +1749,7 @@ apiRouter.get(
   '/admin/settings',
   authMiddleware,
   requireRole(['ADMIN']),
-  (_req, res: Response): void => {
+  async (_req, res: Response): Promise<void> => {
     res.json({
       gymName: 'IronCore Athletic & Gym Club',
       operatingHours: 'Monday - Sunday: 05:00 AM - 11:00 PM',

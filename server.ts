@@ -87,6 +87,31 @@ async function startServer() {
 
   app.use(requestLogger);
 
+  // Cross-Origin Resource Sharing (CORS)
+  // Required when the frontend is deployed separately (e.g. Vercel) or runs on a
+  // separate local dev port (e.g. Vite on 5173). Handles preflight OPTIONS requests cleanly.
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['*'];
+
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes('*')) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    } else if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+
   // Body parsing middleware
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
@@ -98,9 +123,9 @@ async function startServer() {
   // healthy. Responds fast, never exposes secrets, and reports 503 if the
   // database itself isn't reachable (getDatabase() is cheap after the first
   // call — it just returns the already-hydrated in-memory copy).
-  app.get('/api/health', (_req, res) => {
+  app.get('/api/health', async (_req, res) => {
     try {
-      getDatabase();
+      await getDatabase();
       res.json({ status: 'ok', service: 'IronCore API', database: 'connected', timestamp: new Date().toISOString() });
     } catch (err) {
       console.error('[health] Database unavailable:', err instanceof Error ? err.message : err);

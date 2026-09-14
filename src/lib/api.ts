@@ -1,7 +1,11 @@
 // Client API wrapper for IronCore backend.
-// Same-origin relative path — the Express server serves both the API and the
-// built frontend from one origin/port in production, so this never needs a host.
-export const API_BASE = '/api';
+// Supports VITE_API_URL when the frontend is deployed separately from the backend (e.g. Vercel -> Render).
+// If VITE_API_URL is configured, use it (ensuring proper /api base path without trailing slashes).
+// Otherwise fall back to same-origin relative '/api' (for unified hosting or local dev proxy).
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+export const API_BASE = rawApiUrl
+  ? (rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl}/api`)
+  : '/api';
 
 export function getStoredToken(): string | null {
   return localStorage.getItem('ironcore_token');

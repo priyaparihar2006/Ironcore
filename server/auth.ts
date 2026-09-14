@@ -55,7 +55,11 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export async function authMiddleware(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Authentication required. No token provided.' });
@@ -70,21 +74,27 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     return;
   }
 
-  const db = getDatabase();
-  const user = db.users.find((u) => u.id === payload.userId);
+  try {
+    const db = await getDatabase();
+    const user = db.users.find((u) => u.id === payload.userId);
 
-  if (!user) {
-    res.status(401).json({ error: 'User account not found.' });
-    return;
+    if (!user) {
+      res.status(401).json({ error: 'User account not found.' });
+      return;
+    }
+
+    if (user.status !== 'ACTIVE') {
+      res.status(403).json({ error: 'Your account has been deactivated. Please contact support.' });
+      return;
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    // A database error here must not look like "not authenticated" — surface
+    // it as a real server error so it isn't mistaken for a bad/expired token.
+    next(err);
   }
-
-  if (user.status !== 'ACTIVE') {
-    res.status(403).json({ error: 'Your account has been deactivated. Please contact support.' });
-    return;
-  }
-
-  req.user = user;
-  next();
 }
 
 export function requireRole(allowedRoles: ('USER' | 'TRAINER' | 'ADMIN')[]) {
