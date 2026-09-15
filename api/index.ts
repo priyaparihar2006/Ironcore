@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import { apiRouter } from '../server/api.js';
 
@@ -40,5 +40,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
+
+// Global Error Handler for Vercel Serverless Function
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('[Vercel API Error]', err);
+  if (res.headersSent) return;
+  const message = err?.message || 'Internal Server Error';
+  res.status(500).json({ error: message });
+});
 
 export default app;
