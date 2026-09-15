@@ -121,4 +121,10 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+
+  updateAvatar: (imageDataUrl: string) =>
+    request<{ message: string; user: AuthUser }>("/auth/profile/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ image: imageDataUrl }),
+    }),
 };

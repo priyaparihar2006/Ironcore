@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ArrowRight, User, LogOut, LayoutDashboard, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { resolveAvatarUrl } from '../lib/avatar';
 
 interface NavbarProps {
   onOpenTrial: () => void;
@@ -94,10 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
                 className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full bg-white border border-neutral-200/80 shadow-xs hover:bg-neutral-50 transition-all"
               >
                 <img
-                  src={
-                    user.avatar ||
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80'
-                  }
+                  src={resolveAvatarUrl(user)}
                   alt={user.name}
                   referrerPolicy="no-referrer"
                   className="w-7 h-7 rounded-full object-cover"

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
+import { resolveAvatarUrl } from '../../lib/avatar';
 import { NotificationData } from '../../types';
 
 interface UserDashboardLayoutProps {
@@ -139,10 +140,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ childr
         <div className="pt-4 border-t border-neutral-200/70">
           <div className="flex items-center gap-3 p-2 rounded-2xl bg-neutral-50 border border-neutral-200/60 mb-3">
             <img
-              src={
-                user?.avatar ||
-                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80'
-              }
+              src={resolveAvatarUrl(user)}
               alt={user?.name || 'User'}
               referrerPolicy="no-referrer"
               className="w-10 h-10 rounded-xl object-cover border border-neutral-200"
@@ -244,10 +242,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ childr
               className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl hover:bg-neutral-100 transition-colors"
             >
               <img
-                src={
-                  user?.avatar ||
-                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80'
-                }
+                src={resolveAvatarUrl(user)}
                 alt={user?.name || 'User'}
                 referrerPolicy="no-referrer"
                 className="w-8 h-8 rounded-lg object-cover border border-neutral-200"

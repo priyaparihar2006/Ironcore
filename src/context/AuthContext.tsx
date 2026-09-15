@@ -9,6 +9,10 @@ interface AuthContextType {
   login: (email: string, password: string, rememberMe: boolean) => Promise<AuthUser>;
   register: (data: Parameters<typeof api.register>[0]) => Promise<AuthUser>;
   logout: () => void;
+  // Uploads a new profile photo and immediately reflects it in `user` —
+  // every component reading `user.avatar` (Navbar, dashboard headers,
+  // profile page) updates without needing a refetch or re-login.
+  updateAvatar: (imageDataUrl: string) => Promise<AuthUser>;
   // Re-fetches /auth/me and updates both user and profile — call after any
   // profile/measurement update so the UI reflects what was actually saved.
   refreshUser: () => Promise<void>;
@@ -74,9 +78,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.logout().catch(() => {});
   }
 
+  async function updateAvatar(imageDataUrl: string) {
+    const { user: updatedUser } = await api.updateAvatar(imageDataUrl);
+    setUser(updatedUser);
+    return updatedUser;
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, profile, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser }}
+      value={{ user, profile, isAuthenticated: !!user, isLoading, login, register, logout, refreshUser, updateAvatar }}
     >
       {children}
     </AuthContext.Provider>

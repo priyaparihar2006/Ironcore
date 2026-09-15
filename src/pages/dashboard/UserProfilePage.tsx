@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Shield, Target } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Shield, Target, Pencil, Camera, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
+import { resolveAvatarUrl, validateAvatarFile, compressAvatarToDataUrl } from '../../lib/avatar';
 
 export const UserProfilePage: React.FC = () => {
-  const { user, profile, refreshUser } = useAuth();
+  const { user, profile, refreshUser, updateAvatar } = useAuth();
 
   // Personal Info form
   const [name, setName] = useState('');
@@ -12,7 +13,15 @@ export const UserProfilePage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [gender, setGender] = useState('');
   const [fitnessGoal, setFitnessGoal] = useState('');
-  const [avatar, setAvatar] = useState('');
+
+  // Avatar upload
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [pendingAvatarPreview, setPendingAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarSuccess, setAvatarSuccess] = useState<string | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Body Measurements form
   const [heightCm, setHeightCm] = useState('178');
@@ -36,7 +45,6 @@ export const UserProfilePage: React.FC = () => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
-      setAvatar(user.avatar || '');
       setPhone(user.phone || '');
       setGender(user.gender || 'Prefer not to say');
       setFitnessGoal(user.fitnessGoal || 'General Fitness');
@@ -64,7 +72,6 @@ export const UserProfilePage: React.FC = () => {
           phone,
           gender,
           fitnessGoal,
-          avatar,
           height: parseFloat(heightCm),
           currentWeight: parseFloat(currentWeight),
           targetWeight: parseFloat(targetWeight),
@@ -81,6 +88,54 @@ export const UserProfilePage: React.FC = () => {
     } finally {
       setSavingProfile(false);
     }
+  };
+
+  // Selecting a file never fails loudly if the user just cancels the
+  // camera/gallery picker — the input's change event simply won't carry a
+  // file, so this is a silent no-op rather than an error.
+  const handleAvatarFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setAvatarMenuOpen(false);
+    setAvatarSuccess(null);
+
+    const validationError = validateAvatarFile(file);
+    if (validationError) {
+      setAvatarError(validationError);
+      return;
+    }
+
+    try {
+      const preview = await compressAvatarToDataUrl(file);
+      setAvatarError(null);
+      setPendingAvatarPreview(preview);
+    } catch {
+      setAvatarError('Could not read that image file. Please try a different photo.');
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!pendingAvatarPreview) return;
+    setAvatarSaving(true);
+    setAvatarError(null);
+
+    try {
+      await updateAvatar(pendingAvatarPreview);
+      setPendingAvatarPreview(null);
+      setAvatarSuccess('Profile photo updated!');
+      setTimeout(() => setAvatarSuccess(null), 4000);
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : 'Failed to upload photo. Please try again.');
+    } finally {
+      setAvatarSaving(false);
+    }
+  };
+
+  const handleCancelAvatarPreview = () => {
+    setPendingAvatarPreview(null);
+    setAvatarError(null);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -149,22 +204,106 @@ export const UserProfilePage: React.FC = () => {
           </h2>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-6 pb-6 border-b border-neutral-100">
-            <img
-              src={avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80'}
-              alt={name}
-              referrerPolicy="no-referrer"
-              className="w-20 h-20 rounded-2xl object-cover border border-neutral-200 shadow-sm"
-            />
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-[#080512] mb-1">Avatar Image URL</label>
-              <input
-                type="url"
-                value={avatar}
-                onChange={(e) => setAvatar(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+            <div className="relative w-20 h-20 flex-shrink-0">
+              <img
+                src={pendingAvatarPreview || resolveAvatarUrl(user)}
+                alt={name}
+                referrerPolicy="no-referrer"
+                className="w-20 h-20 rounded-2xl object-cover border border-neutral-200 shadow-sm"
               />
-              <p className="text-[11px] text-neutral-400 mt-1">Accepts any standard secure HTTPS image URL.</p>
+              <button
+                type="button"
+                onClick={() => setAvatarMenuOpen((v) => !v)}
+                aria-label="Change profile photo"
+                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#080512] text-white flex items-center justify-center border-2 border-white shadow-md hover:bg-neutral-800 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+
+              {avatarMenuOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-neutral-200/80 p-2 z-20">
+                  <div className="px-3 pt-1.5 pb-1 text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                    Change Profile Photo
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#080512] hover:bg-neutral-100 transition-colors cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 text-purple-600" />
+                    Take Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-[#080512] hover:bg-neutral-100 transition-colors cursor-pointer"
+                  >
+                    <ImageIcon className="w-4 h-4 text-purple-600" />
+                    Choose from Gallery
+                  </button>
+                </div>
+              )}
+
+              {/* `capture` opens the device camera directly on mobile browsers that
+                  support it (Android/iOS Safari); browsers without support just fall
+                  back to a normal file picker, so nothing breaks either way. Camera
+                  access is only ever requested when the user taps "Take Photo". */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                onChange={handleAvatarFileSelected}
+                className="hidden"
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarFileSelected}
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex-1">
+              <div className="text-xs font-bold text-[#080512] mb-1">Profile Photo</div>
+              <p className="text-[11px] text-neutral-400">
+                JPG, PNG, or WEBP — max 5MB. Tap the pencil icon to take a new photo or choose one from your gallery.
+              </p>
+
+              {avatarError && (
+                <p className="text-[11px] font-bold text-red-600 mt-2 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {avatarError}
+                </p>
+              )}
+              {avatarSuccess && (
+                <p className="text-[11px] font-bold text-emerald-600 mt-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  {avatarSuccess}
+                </p>
+              )}
+
+              {pendingAvatarPreview && (
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveAvatar}
+                    disabled={avatarSaving}
+                    className="px-4 py-2 rounded-xl bg-[#080512] text-white text-[11px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {avatarSaving ? 'Saving...' : 'Save Photo'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelAvatarPreview}
+                    disabled={avatarSaving}
+                    className="px-4 py-2 rounded-xl border border-neutral-200 text-neutral-600 text-[11px] font-bold hover:bg-neutral-50 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

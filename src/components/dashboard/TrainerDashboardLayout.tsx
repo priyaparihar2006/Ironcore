@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { resolveAvatarUrl } from '../../lib/avatar';
 
 interface TrainerDashboardLayoutProps {
   children: React.ReactNode;
@@ -107,10 +108,7 @@ export const TrainerDashboardLayout: React.FC<TrainerDashboardLayoutProps> = ({ 
         <div className="pt-4 border-t border-neutral-200/70">
           <div className="flex items-center gap-3 p-2 rounded-2xl bg-neutral-50 border border-neutral-200/60 mb-3">
             <img
-              src={
-                user?.avatar ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'
-              }
+              src={resolveAvatarUrl(user)}
               alt={user?.name || 'Coach'}
               referrerPolicy="no-referrer"
               className="w-10 h-10 rounded-xl object-cover border border-neutral-200"

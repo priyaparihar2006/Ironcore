@@ -23,6 +23,7 @@ import {
   generateToken,
   AuthenticatedRequest,
 } from './auth.js';
+import { parseAndValidateAvatarDataUrl, uploadAvatarImage } from './storage.js';
 
 export const apiRouter = express.Router();
 
@@ -66,6 +67,17 @@ const registerRateLimiter = rateLimit({
 const forgotPasswordRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: envInt('FORGOT_PASSWORD_RATE_LIMIT_MAX', 5),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: rateLimitMessage,
+});
+
+// Avatar upload: each request involves an external storage upload, so this
+// caps it well below general API usage without being disruptive for normal
+// profile-photo changes.
+const avatarUploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: envInt('AVATAR_UPLOAD_RATE_LIMIT_MAX', 15),
   standardHeaders: true,
   legacyHeaders: false,
   message: rateLimitMessage,
@@ -143,7 +155,11 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       fitnessGoal: fitnessGoal || 'General Fitness',
       status: 'ACTIVE',
       joinedDate: new Date().toISOString().split('T')[0],
-      avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80`,
+      // No avatar is assigned at signup — leaving it unset lets the frontend
+      // fall back to a gender-matched default (see src/lib/avatar.ts), which
+      // stays correct even if the user changes their gender later. A real
+      // photo is only ever set once the user actually uploads one via
+      // PUT /auth/profile/avatar.
     };
 
     // Default Profile
@@ -324,6 +340,46 @@ apiRouter.put('/auth/profile', authMiddleware, async (req: AuthenticatedRequest,
     profile,
   });
 });
+
+// Update Avatar — a dedicated endpoint (rather than the plain `avatar` string
+// field PUT /auth/profile already accepts) because this one actually
+// receives image bytes and must validate + store them, not just persist a
+// string. Only ever touches req.user!.id's own row — no user id is accepted
+// from the client, so a user can never overwrite someone else's avatar.
+apiRouter.put(
+  '/auth/profile/avatar',
+  authMiddleware,
+  avatarUploadRateLimiter,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const parsed = parseAndValidateAvatarDataUrl(req.body?.image);
+      const avatarUrl = await uploadAvatarImage(req.user!.id, parsed);
+
+      const db = await getDatabase();
+      const userIndex = db.users.findIndex((u) => u.id === req.user!.id);
+      if (userIndex === -1) {
+        res.status(404).json({ error: 'User not found.' });
+        return;
+      }
+
+      db.users[userIndex].avatar = avatarUrl;
+      await saveDatabase(db);
+
+      res.json({
+        message: 'Profile photo updated successfully.',
+        user: sanitizeUser(db.users[userIndex]),
+      });
+    } catch (error) {
+      // parseAndValidateAvatarDataUrl / uploadAvatarImage throw plain Errors
+      // with user-safe messages (invalid type, too large, storage not
+      // configured, upload failed) — safe to return directly, unlike a raw
+      // unexpected error.
+      const message = error instanceof Error ? error.message : 'Failed to update profile photo.';
+      console.error('Avatar update error:', error);
+      res.status(400).json({ error: message });
+    }
+  }
+);
 
 // Change Password
 apiRouter.put('/auth/change-password', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
