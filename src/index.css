@@ -9,9 +9,23 @@
 
 
   h1, h2, h3, .font-display {
-    font-family: 'Syne', 'Plus Jakarta Sans', -apple-system, sans-serif;
+    font-family: 'Space Grotesk', 'Plus Jakarta Sans', -apple-system, sans-serif;
     letter-spacing: -0.04em;
   }
+}
+
+/* Space Grotesk reads better with slightly looser tracking than Syne needed —
+   without this, the Tailwind tracking-tight(er) utilities already hardcoded
+   on the large display headings (Hero, section titles) crowd its letterforms
+   at big sizes, especially on mobile. Scoped to elements carrying BOTH
+   .font-display and a tracking utility, and left unlayered so it wins over
+   Tailwind's utilities layer — every other use of tracking-tight/tighter
+   elsewhere on the site (logos, dashboard headings, small text) is untouched. */
+.font-display.tracking-tighter {
+  letter-spacing: -0.02em;
+}
+.font-display.tracking-tight {
+  letter-spacing: -0.01em;
 }
 
 /* Custom scrollbar */
