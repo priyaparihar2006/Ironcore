@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    /* Apple/iOS system font stack — resolves to San Francisco on iOS/macOS
+       (via -apple-system / BlinkMacSystemFont), and falls back gracefully on
+       Windows/Android/Linux, where none of the Apple-only keywords or the
+       literal "SF Pro..." names match anything installed. Single source of
+       truth so body and heading rules below never duplicate the list. */
+    --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-system);
     background-color: #F8F7FA;
     color: #080512;
   }
 
-
   h1, h2, h3, .font-display {
-    font-family: 'Space Grotesk', 'Plus Jakarta Sans', -apple-system, sans-serif;
+    font-family: var(--font-system);
     letter-spacing: -0.04em;
   }
 }
 
-/* Space Grotesk reads better with slightly looser tracking than Syne needed —
-   without this, the Tailwind tracking-tight(er) utilities already hardcoded
-   on the large display headings (Hero, section titles) crowd its letterforms
-   at big sizes, especially on mobile. Scoped to elements carrying BOTH
-   .font-display and a tracking utility, and left unlayered so it wins over
-   Tailwind's utilities layer — every other use of tracking-tight/tighter
-   elsewhere on the site (logos, dashboard headings, small text) is untouched. */
+/* The realistic fallback for most non-Apple visitors is Arial/Helvetica Neue,
+   which run wider than San Francisco — at the large display sizes used on
+   Hero/section headings, Tailwind's own tracking-tight(er) utilities
+   (-0.025em/-0.05em) sit on top of that width and can crowd letters or
+   overflow on small phones. Loosened slightly here so tracking stays
+   "slightly tighter than normal" rather than aggressively tight, matching
+   Apple's own large-headline style without the overflow risk. Scoped to
+   elements carrying BOTH .font-display and a tracking utility, and left
+   unlayered so it wins over Tailwind's utilities layer — every other use of
+   tracking-tight/tighter elsewhere on the site (logos, dashboard headings,
+   small text) is untouched. */
 .font-display.tracking-tighter {
   letter-spacing: -0.02em;
 }
