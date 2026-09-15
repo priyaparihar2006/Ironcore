@@ -162,16 +162,11 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       // PUT /auth/profile/avatar.
     };
 
-    // Default Profile
-    const newProfile: UserProfile = {
-      userId,
-      currentWeight: 70,
-      targetWeight: 65,
-      height: 175,
-      bodyFatPercentage: 18,
-      muscleMass: 35,
-      bio: `Goal: ${fitnessGoal || 'General Fitness'}`,
-    };
+    // No fitness profile (height/weight/targets) is created here — a real
+    // new member hasn't told us any of that yet. The profile row is only
+    // ever created once the user actually submits it via the "Complete Your
+    // Fitness Profile" onboarding step (PUT /auth/profile), never
+    // pre-filled with placeholder numbers.
 
     // Default 14-day Trial Basic Membership
     const expiry = new Date();
@@ -201,7 +196,6 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
     });
 
     db.users.push(newUser);
-    db.profiles.push(newProfile);
     db.userMemberships.push(newMembership);
 
     await saveDatabase(db);
@@ -300,35 +294,100 @@ apiRouter.put('/auth/profile', authMiddleware, async (req: AuthenticatedRequest,
     bio,
   } = req.body;
 
-  // Update user base
   const userIndex = db.users.findIndex((u) => u.id === user.id);
-  if (userIndex !== -1) {
-    if (name) db.users[userIndex].name = name.trim();
-    if (phone !== undefined) db.users[userIndex].phone = phone;
-    if (gender !== undefined) db.users[userIndex].gender = gender;
-    if (fitnessGoal !== undefined) db.users[userIndex].fitnessGoal = fitnessGoal;
-    if (avatar) db.users[userIndex].avatar = avatar;
+  if (userIndex === -1) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
   }
 
-  // Update profile
+  // This endpoint is also how the onboarding flow creates the fitness
+  // profile on its first submission — no row yet means height/current
+  // weight/target weight are mandatory (never silently defaulted). Once a
+  // profile exists, each field is only validated/changed if the request
+  // actually includes it. Body fat % and muscle mass % are always optional
+  // and may be sent as null/empty to explicitly clear them.
   let profile = db.profiles.find((p) => p.userId === user.id);
-  if (!profile) {
+  const creatingProfile = !profile;
+
+  let parsedHeight: number | undefined;
+  if (height !== undefined || creatingProfile) {
+    parsedHeight = Number(height);
+    if (!Number.isFinite(parsedHeight) || parsedHeight < 100 || parsedHeight > 250) {
+      res.status(400).json({ error: 'Height is required and must be between 100 and 250 cm.' });
+      return;
+    }
+  }
+
+  let parsedCurrentWeight: number | undefined;
+  if (currentWeight !== undefined || creatingProfile) {
+    parsedCurrentWeight = Number(currentWeight);
+    if (!Number.isFinite(parsedCurrentWeight) || parsedCurrentWeight < 20 || parsedCurrentWeight > 300) {
+      res.status(400).json({ error: 'Current weight is required and must be between 20 and 300 kg.' });
+      return;
+    }
+  }
+
+  let parsedTargetWeight: number | undefined;
+  if (targetWeight !== undefined || creatingProfile) {
+    parsedTargetWeight = Number(targetWeight);
+    if (!Number.isFinite(parsedTargetWeight) || parsedTargetWeight < 20 || parsedTargetWeight > 300) {
+      res.status(400).json({ error: 'Target weight is required and must be between 20 and 300 kg.' });
+      return;
+    }
+  }
+
+  // null/'' means "clear it" (allowed, since these are optional); a
+  // non-empty value must still be a valid percentage.
+  let parsedBodyFat: number | null | undefined;
+  if (bodyFatPercentage !== undefined) {
+    if (bodyFatPercentage === null || bodyFatPercentage === '') {
+      parsedBodyFat = null;
+    } else {
+      parsedBodyFat = Number(bodyFatPercentage);
+      if (!Number.isFinite(parsedBodyFat) || parsedBodyFat < 0 || parsedBodyFat > 100) {
+        res.status(400).json({ error: 'Body fat % must be between 0 and 100.' });
+        return;
+      }
+    }
+  }
+
+  let parsedMuscleMass: number | null | undefined;
+  if (muscleMass !== undefined) {
+    if (muscleMass === null || muscleMass === '') {
+      parsedMuscleMass = null;
+    } else {
+      parsedMuscleMass = Number(muscleMass);
+      if (!Number.isFinite(parsedMuscleMass) || parsedMuscleMass < 0 || parsedMuscleMass > 100) {
+        res.status(400).json({ error: 'Muscle mass % must be between 0 and 100.' });
+        return;
+      }
+    }
+  }
+
+  // Update user identity fields
+  if (name) db.users[userIndex].name = name.trim();
+  if (phone !== undefined) db.users[userIndex].phone = phone;
+  if (gender !== undefined) db.users[userIndex].gender = gender;
+  if (fitnessGoal !== undefined) db.users[userIndex].fitnessGoal = fitnessGoal;
+  if (avatar) db.users[userIndex].avatar = avatar;
+
+  if (creatingProfile) {
     profile = {
       userId: user.id,
-      currentWeight: currentWeight || 70,
-      targetWeight: targetWeight || 65,
-      height: height || 175,
-      bodyFatPercentage: bodyFatPercentage || 18,
-      muscleMass: muscleMass || 35,
+      currentWeight: parsedCurrentWeight!,
+      targetWeight: parsedTargetWeight!,
+      height: parsedHeight!,
+      bodyFatPercentage: parsedBodyFat === null ? undefined : parsedBodyFat,
+      muscleMass: parsedMuscleMass === null ? undefined : parsedMuscleMass,
       bio: bio || '',
     };
     db.profiles.push(profile);
   } else {
-    if (currentWeight !== undefined) profile.currentWeight = Number(currentWeight);
-    if (targetWeight !== undefined) profile.targetWeight = Number(targetWeight);
-    if (height !== undefined) profile.height = Number(height);
-    if (bodyFatPercentage !== undefined) profile.bodyFatPercentage = Number(bodyFatPercentage);
-    if (muscleMass !== undefined) profile.muscleMass = Number(muscleMass);
+    if (parsedHeight !== undefined) profile.height = parsedHeight;
+    if (parsedCurrentWeight !== undefined) profile.currentWeight = parsedCurrentWeight;
+    if (parsedTargetWeight !== undefined) profile.targetWeight = parsedTargetWeight;
+    if (parsedBodyFat !== undefined) profile.bodyFatPercentage = parsedBodyFat === null ? undefined : parsedBodyFat;
+    if (parsedMuscleMass !== undefined) profile.muscleMass = parsedMuscleMass === null ? undefined : parsedMuscleMass;
     if (bio !== undefined) profile.bio = bio;
   }
 
@@ -1081,6 +1140,18 @@ apiRouter.get(
       return {
         ...sanitizeUser(c),
         profile,
+        // Same shape as /admin/overview's recentUsers.measurements — the
+        // frontend client card reads this. Previously absent here, so it
+        // always fell through to hardcoded placeholder numbers regardless
+        // of the client's real (or missing) profile data.
+        measurements: profile
+          ? {
+              currentWeightKg: profile.currentWeight,
+              targetWeightKg: profile.targetWeight,
+              heightCm: profile.height,
+              bodyFatPercent: profile.bodyFatPercentage,
+            }
+          : undefined,
         membership,
         latestWorkout,
       };
@@ -1521,15 +1592,11 @@ apiRouter.post(
         joinedDate: new Date().toISOString().split('T')[0],
       };
 
+      // No fitness profile is created here either — same reasoning as
+      // public signup (see POST /auth/register): the admin hasn't been
+      // given this member's real height/weight, so nothing is invented.
+      // The member (or their trainer) fills it in via PUT /auth/profile.
       db.users.push(newUser);
-      db.profiles.push({
-        userId: newUser.id,
-        currentWeight: 70,
-        targetWeight: 65,
-        height: 175,
-        bodyFatPercentage: 18,
-        muscleMass: 35,
-      });
 
       await saveDatabase(db);
       res.status(201).json({ message: 'User created successfully!', user: sanitizeUser(newUser) });

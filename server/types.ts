@@ -21,11 +21,13 @@ export interface User {
 
 export interface UserProfile {
   userId: string;
-  currentWeight: number; // in kg
-  targetWeight: number; // in kg
-  height: number; // in cm
-  bodyFatPercentage: number;
-  muscleMass: number;
+  currentWeight: number; // in kg — required: a profile row is only ever created once the user provides this
+  targetWeight: number; // in kg — required, same as above
+  height: number; // in cm — required, same as above
+  // Optional — a normal new member often doesn't know these; never defaulted
+  // to a fake number, only ever a real user-provided value or unset.
+  bodyFatPercentage?: number;
+  muscleMass?: number;
   emergencyContact?: string;
   bio?: string;
 }

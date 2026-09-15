@@ -26,8 +26,10 @@ export interface UserProfile {
   currentWeight: number;
   targetWeight: number;
   height: number;
-  bodyFatPercentage: number;
-  muscleMass: number;
+  // Optional — a normal new member often doesn't know these; never a fake
+  // default, only ever a real user-provided value or unset.
+  bodyFatPercentage?: number;
+  muscleMass?: number;
   emergencyContact?: string;
   bio?: string;
 }

@@ -168,25 +168,33 @@ export const TrainerClientsPage: React.FC = () => {
                     <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
                       <span className="text-[10px] uppercase font-bold text-neutral-400">Current Weight</span>
                       <div className="text-lg font-black text-[#080512] mt-1">
-                        {selectedClient.measurements?.currentWeightKg || 72} kg
+                        {selectedClient.measurements?.currentWeightKg !== undefined
+                          ? `${selectedClient.measurements.currentWeightKg} kg`
+                          : 'Not provided'}
                       </div>
                     </div>
                     <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
                       <span className="text-[10px] uppercase font-bold text-neutral-400">Target Weight</span>
                       <div className="text-lg font-black text-emerald-700 mt-1">
-                        {selectedClient.measurements?.targetWeightKg || 65} kg
+                        {selectedClient.measurements?.targetWeightKg !== undefined
+                          ? `${selectedClient.measurements.targetWeightKg} kg`
+                          : 'Not provided'}
                       </div>
                     </div>
                     <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
                       <span className="text-[10px] uppercase font-bold text-neutral-400">Height</span>
                       <div className="text-lg font-black text-[#080512] mt-1">
-                        {selectedClient.measurements?.heightCm || 178} cm
+                        {selectedClient.measurements?.heightCm !== undefined
+                          ? `${selectedClient.measurements.heightCm} cm`
+                          : 'Not provided'}
                       </div>
                     </div>
                     <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
                       <span className="text-[10px] uppercase font-bold text-neutral-400">Body Fat %</span>
                       <div className="text-lg font-black text-[#080512] mt-1">
-                        {selectedClient.measurements?.bodyFatPercent || 14.5}%
+                        {selectedClient.measurements?.bodyFatPercent !== undefined
+                          ? `${selectedClient.measurements.bodyFatPercent}%`
+                          : 'Not provided'}
                       </div>
                     </div>
                   </div>

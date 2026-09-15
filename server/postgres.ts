@@ -113,11 +113,21 @@ const SCHEMA_SQL = `
     "currentWeight" REAL NOT NULL,
     "targetWeight" REAL NOT NULL,
     height REAL NOT NULL,
-    "bodyFatPercentage" REAL NOT NULL,
-    "muscleMass" REAL NOT NULL,
+    "bodyFatPercentage" REAL,
+    "muscleMass" REAL,
     "emergencyContact" TEXT,
     bio TEXT
   );
+  -- A profile row is only ever created once a user submits their fitness
+  -- profile (see PUT /auth/profile in server/api.ts) — no row means "not
+  -- provided yet", never a fake default. Body fat / muscle mass are always
+  -- optional and may be left unset even once a profile exists, so they must
+  -- be nullable. This ALTER is a no-op on a fresh database (the CREATE TABLE
+  -- above already omits NOT NULL for them) and safely loosens the
+  -- constraint on an already-deployed database without touching any
+  -- existing row's data.
+  ALTER TABLE profiles ALTER COLUMN "bodyFatPercentage" DROP NOT NULL;
+  ALTER TABLE profiles ALTER COLUMN "muscleMass" DROP NOT NULL;
 
   CREATE TABLE IF NOT EXISTS trainers (
     id TEXT PRIMARY KEY,
@@ -461,8 +471,8 @@ async function insertProfiles(client: PoolClient, rows: UserProfile[]): Promise<
         p.currentWeight,
         p.targetWeight,
         p.height,
-        p.bodyFatPercentage,
-        p.muscleMass,
+        p.bodyFatPercentage ?? null,
+        p.muscleMass ?? null,
         p.emergencyContact ?? null,
         p.bio ?? null,
       ]

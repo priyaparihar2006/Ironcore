@@ -3,6 +3,18 @@ import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Shield, Targe
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { resolveAvatarUrl, validateAvatarFile, compressAvatarToDataUrl } from '../../lib/avatar';
+import { isFitnessProfileComplete } from '../../lib/profile';
+
+const FITNESS_GOALS = [
+  'Weight Loss',
+  'Muscle Gain',
+  'Strength',
+  'Endurance',
+  'General Fitness',
+  'Flexibility',
+  'Sports Performance',
+  'Other',
+];
 
 export const UserProfilePage: React.FC = () => {
   const { user, profile, refreshUser, updateAvatar } = useAuth();
@@ -23,12 +35,14 @@ export const UserProfilePage: React.FC = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Body Measurements form
-  const [heightCm, setHeightCm] = useState('178');
-  const [currentWeight, setCurrentWeight] = useState('72');
-  const [targetWeight, setTargetWeight] = useState('65');
-  const [bodyFatPercent, setBodyFatPercent] = useState('14.5');
-  const [muscleMassPercent, setMuscleMassPercent] = useState('42.0');
+  // Body Measurements form — genuinely empty until the user provides real
+  // values or their existing profile loads; never pre-filled with demo
+  // numbers.
+  const [heightCm, setHeightCm] = useState('');
+  const [currentWeight, setCurrentWeight] = useState('');
+  const [targetWeight, setTargetWeight] = useState('');
+  const [bodyFatPercent, setBodyFatPercent] = useState('');
+  const [muscleMassPercent, setMuscleMassPercent] = useState('');
 
   // Password Change
   const [currentPassword, setCurrentPassword] = useState('');
@@ -38,7 +52,9 @@ export const UserProfilePage: React.FC = () => {
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [savingProfile, setSavingProfile] = useState(false);
-  const [profileMsg, setProfileMsg] = useState<string | null>(null);
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const profileComplete = isFitnessProfileComplete(profile);
 
   useEffect(() => {
     // Identity fields live on the User record.
@@ -47,22 +63,63 @@ export const UserProfilePage: React.FC = () => {
       setEmail(user.email);
       setPhone(user.phone || '');
       setGender(user.gender || 'Prefer not to say');
-      setFitnessGoal(user.fitnessGoal || 'General Fitness');
+      setFitnessGoal(user.fitnessGoal || '');
     }
-    // Body measurements live on the UserProfile record.
-    if (profile) {
-      setHeightCm(String(profile.height ?? 178));
-      setCurrentWeight(String(profile.currentWeight ?? 72));
-      setTargetWeight(String(profile.targetWeight ?? 65));
-      setBodyFatPercent(String(profile.bodyFatPercentage ?? 14.5));
-      setMuscleMassPercent(String(profile.muscleMass ?? 42.0));
-    }
+    // Body measurements live on the UserProfile record — real values if the
+    // user has already saved them, otherwise genuinely empty (never a fake
+    // placeholder number).
+    setHeightCm(profile ? String(profile.height) : '');
+    setCurrentWeight(profile ? String(profile.currentWeight) : '');
+    setTargetWeight(profile ? String(profile.targetWeight) : '');
+    setBodyFatPercent(profile?.bodyFatPercentage !== undefined ? String(profile.bodyFatPercentage) : '');
+    setMuscleMassPercent(profile?.muscleMass !== undefined ? String(profile.muscleMass) : '');
   }, [user, profile]);
+
+  // Validates a required numeric field within [min, max]; returns the
+  // parsed number, or null (after setting a friendly error message) if the
+  // field is missing or out of range. Never falls back to a fake default.
+  const validateRequiredNumber = (raw: string, label: string, min: number, max: number): number | null => {
+    const value = Number(raw);
+    if (raw.trim() === '' || !Number.isFinite(value) || value < min || value > max) {
+      setProfileMsg({ type: 'error', text: `${label} is required and must be between ${min} and ${max}.` });
+      return null;
+    }
+    return value;
+  };
+
+  // Optional numeric field: blank is valid (means "not provided"); a
+  // non-blank value must still be within [min, max].
+  const validateOptionalNumber = (raw: string, label: string, min: number, max: number): number | null | 'invalid' => {
+    if (raw.trim() === '') return null;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < min || value > max) {
+      setProfileMsg({ type: 'error', text: `${label} must be between ${min} and ${max}.` });
+      return 'invalid';
+    }
+    return value;
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingProfile(true);
     setProfileMsg(null);
+
+    if (!fitnessGoal) {
+      setProfileMsg({ type: 'error', text: 'Please select your primary fitness goal.' });
+      return;
+    }
+
+    const height = validateRequiredNumber(heightCm, 'Height', 100, 250);
+    if (height === null) return;
+    const weight = validateRequiredNumber(currentWeight, 'Current weight', 20, 300);
+    if (weight === null) return;
+    const target = validateRequiredNumber(targetWeight, 'Target weight', 20, 300);
+    if (target === null) return;
+    const bodyFat = validateOptionalNumber(bodyFatPercent, 'Body fat %', 0, 100);
+    if (bodyFat === 'invalid') return;
+    const muscleMass = validateOptionalNumber(muscleMassPercent, 'Muscle mass %', 0, 100);
+    if (muscleMass === 'invalid') return;
+
+    setSavingProfile(true);
 
     try {
       await apiRequest('/auth/profile', {
@@ -72,19 +129,19 @@ export const UserProfilePage: React.FC = () => {
           phone,
           gender,
           fitnessGoal,
-          height: parseFloat(heightCm),
-          currentWeight: parseFloat(currentWeight),
-          targetWeight: parseFloat(targetWeight),
-          bodyFatPercentage: parseFloat(bodyFatPercent),
-          muscleMass: parseFloat(muscleMassPercent),
+          height,
+          currentWeight: weight,
+          targetWeight: target,
+          bodyFatPercentage: bodyFat,
+          muscleMass: muscleMass,
         }),
       });
 
       await refreshUser();
-      setProfileMsg('Athlete profile and biometrics successfully updated.');
+      setProfileMsg({ type: 'success', text: 'Athlete profile and biometrics successfully updated.' });
       setTimeout(() => setProfileMsg(null), 4000);
     } catch (err: unknown) {
-      setProfileMsg(err instanceof Error ? err.message : 'Failed to save profile');
+      setProfileMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save profile.' });
     } finally {
       setSavingProfile(false);
     }
@@ -187,9 +244,11 @@ export const UserProfilePage: React.FC = () => {
       </div>
 
       {profileMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-          <span>{profileMsg}</span>
+        <div className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+          profileMsg.type === 'success' ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : 'bg-red-50 text-red-900 border border-red-200'
+        }`}>
+          {profileMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />}
+          <span>{profileMsg.text}</span>
         </div>
       )}
 
@@ -368,13 +427,13 @@ export const UserProfilePage: React.FC = () => {
             <select
               value={fitnessGoal}
               onChange={(e) => setFitnessGoal(e.target.value)}
+              required
               className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
             >
-              <option value="Weight Loss">Weight Loss</option>
-              <option value="Muscle Gain">Muscle Gain</option>
-              <option value="Strength">Strength</option>
-              <option value="General Fitness">General Fitness</option>
-              <option value="Endurance">Endurance</option>
+              <option value="" disabled>Select Goal</option>
+              {FITNESS_GOALS.map((goal) => (
+                <option key={goal} value={goal}>{goal}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -389,13 +448,26 @@ export const UserProfilePage: React.FC = () => {
             <span className="text-xs font-semibold text-neutral-400">Used by Coach for Macro Planning</span>
           </div>
 
+          {!profileComplete && (
+            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200/60">
+              <div className="text-sm font-black text-purple-900">Complete Your Fitness Profile</div>
+              <p className="text-xs text-purple-800/80 mt-1">
+                Tell us a little about yourself so IronCore can personalize your fitness journey. Height and weight are required — body fat and muscle mass are optional if you don't know them yet.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Height (cm)</label>
               <input
                 type="number"
+                required
+                min={100}
+                max={250}
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
+                placeholder="Enter height"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
               />
             </div>
@@ -405,8 +477,12 @@ export const UserProfilePage: React.FC = () => {
               <input
                 type="number"
                 step="0.1"
+                required
+                min={20}
+                max={300}
                 value={currentWeight}
                 onChange={(e) => setCurrentWeight(e.target.value)}
+                placeholder="Enter current weight"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-purple-900"
               />
             </div>
@@ -416,8 +492,12 @@ export const UserProfilePage: React.FC = () => {
               <input
                 type="number"
                 step="0.1"
+                required
+                min={20}
+                max={300}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(e.target.value)}
+                placeholder="Enter target weight"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-emerald-700"
               />
             </div>
@@ -427,8 +507,11 @@ export const UserProfilePage: React.FC = () => {
               <input
                 type="number"
                 step="0.1"
+                min={0}
+                max={100}
                 value={bodyFatPercent}
                 onChange={(e) => setBodyFatPercent(e.target.value)}
+                placeholder="Optional"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
               />
             </div>
@@ -438,8 +521,11 @@ export const UserProfilePage: React.FC = () => {
               <input
                 type="number"
                 step="0.1"
+                min={0}
+                max={100}
                 value={muscleMassPercent}
                 onChange={(e) => setMuscleMassPercent(e.target.value)}
+                placeholder="Optional"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
               />
             </div>
@@ -451,7 +537,7 @@ export const UserProfilePage: React.FC = () => {
             className="px-6 py-3 rounded-2xl bg-[#080512] text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all cursor-pointer shadow-md"
           >
             <Save className="w-4 h-4" />
-            <span>{savingProfile ? 'Saving Details...' : 'Save Profile Changes'}</span>
+            <span>{savingProfile ? 'Saving Details...' : profileComplete ? 'Save Profile Changes' : 'Save & Continue'}</span>
           </button>
         </div>
 

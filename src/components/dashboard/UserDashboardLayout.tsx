@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { resolveAvatarUrl } from '../../lib/avatar';
+import { isFitnessProfileComplete } from '../../lib/profile';
 import { NotificationData } from '../../types';
 
 interface UserDashboardLayoutProps {
@@ -26,9 +27,22 @@ interface UserDashboardLayoutProps {
 }
 
 export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, profile, isLoading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Gate: a new member with no fitness profile yet is sent straight to the
+  // profile page to complete onboarding before seeing the rest of the
+  // athlete dashboard, rather than an empty/misleading Overview page. Waits
+  // for the initial session/profile load (isLoading) so this doesn't fire a
+  // false redirect before `profile` has actually arrived.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) return;
+    if (isFitnessProfileComplete(profile)) return;
+    if (location.pathname === '/dashboard/profile') return;
+    navigate('/dashboard/profile', { replace: true });
+  }, [isLoading, user, profile, location.pathname, navigate]);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
