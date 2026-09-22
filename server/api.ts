@@ -1,3 +1,7 @@
+import { nutritionRouter } from './nutrition/routes.js';
+import { healthRouter } from './health/routes.js';
+import { userDate } from './health/state.js';
+import { asyncRouter } from './router.js';
 import express, { Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
@@ -25,7 +29,7 @@ import {
 } from './auth.js';
 import { parseAndValidateAvatarDataUrl, uploadAvatarImage } from './storage.js';
 
-export const apiRouter = express.Router();
+export const apiRouter = asyncRouter();
 
 // ==========================================
 // RATE LIMITING — sensitive auth endpoints only. Limits are configurable via
@@ -611,7 +615,7 @@ function calculateWorkoutStreak(
 apiRouter.get('/user/dashboard-summary', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const db = await getDatabase();
   const userId = req.user!.id;
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = userDate(db, userId);
 
   // --- Body stats. No fake fallback: null means "profile not set up yet". ---
   const profile = db.profiles.find((p) => p.userId === userId) || null;
@@ -743,7 +747,7 @@ apiRouter.get('/user/progress', authMiddleware, async (req: AuthenticatedRequest
 apiRouter.post('/user/progress', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const { weightKg, caloriesBurned, steps, strengthScore, notes } = req.body;
   const db = await getDatabase();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = userDate(db, req.user!.id);
 
   // Validate inputs — no fake fallbacks. Weight is required and must be sane;
   // the rest are optional but rejected if present and out of range.
@@ -793,122 +797,6 @@ apiRouter.post('/user/progress', authMiddleware, async (req: AuthenticatedReques
 
   await saveDatabase(db);
   res.status(201).json({ message: 'Progress record logged!', record: newRecord });
-});
-
-// Default daily macro/calorie goals used when the user has no log for the day.
-// These are targets (goals), not logged data — consumed values always stay 0
-// until the user actually logs a meal.
-const DEFAULT_NUTRITION_TARGETS = {
-  dailyCalorieTarget: 2200,
-  proteinTargetGrams: 175,
-  carbsTargetGrams: 220,
-  fatsTargetGrams: 65,
-};
-
-// Recompute consumed totals straight from the meal list so the numbers shown
-// are always the real sum of what was logged.
-function recalcNutritionTotals(log: NutritionLog): void {
-  log.consumedCalories = log.meals.reduce((s, m) => s + m.calories, 0);
-  log.consumedProteinGrams = log.meals.reduce((s, m) => s + m.proteinGrams, 0);
-  log.consumedCarbsGrams = log.meals.reduce((s, m) => s + m.carbsGrams, 0);
-  log.consumedFatsGrams = log.meals.reduce((s, m) => s + m.fatsGrams, 0);
-}
-
-// Nutrition — today's log for the authenticated user. Read-only: if there is no
-// log yet we return an empty (zeroed) one WITHOUT saving it, so we never create
-// fake records just because someone opened the page.
-apiRouter.get('/user/nutrition', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const db = await getDatabase();
-  const todayStr = new Date().toISOString().split('T')[0];
-  const log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
-
-  if (!log) {
-    res.json({
-      nutrition: {
-        id: `nutri_empty_${todayStr}`,
-        userId: req.user!.id,
-        date: todayStr,
-        ...DEFAULT_NUTRITION_TARGETS,
-        consumedCalories: 0,
-        consumedProteinGrams: 0,
-        consumedCarbsGrams: 0,
-        consumedFatsGrams: 0,
-        meals: [],
-      },
-    });
-    return;
-  }
-
-  recalcNutritionTotals(log);
-  res.json({ nutrition: log });
-});
-
-// Add Meal — appends a real meal to today's log for the authenticated user.
-apiRouter.post('/user/nutrition/meals', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-  const { type, name, calories, proteinGrams, carbsGrams, fatsGrams } = req.body;
-
-  // Validate inputs — no fake fallbacks for the identifying fields.
-  const allowedTypes: MealItem['type'][] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-  const mealType: MealItem['type'] = allowedTypes.includes(type) ? type : 'Snack';
-
-  if (typeof name !== 'string' || name.trim().length === 0) {
-    res.status(400).json({ error: 'A meal name / description is required.' });
-    return;
-  }
-
-  const cals = Number(calories);
-  if (!Number.isFinite(cals) || cals < 0 || cals > 20000) {
-    res.status(400).json({ error: 'Calories must be a number between 0 and 20000.' });
-    return;
-  }
-
-  const macro = (value: unknown): number => {
-    const n = value === undefined || value === '' ? 0 : Number(value);
-    return Number.isFinite(n) && n >= 0 && n <= 2000 ? n : NaN;
-  };
-  const protein = macro(proteinGrams);
-  const carbs = macro(carbsGrams);
-  const fats = macro(fatsGrams);
-  if (Number.isNaN(protein) || Number.isNaN(carbs) || Number.isNaN(fats)) {
-    res.status(400).json({ error: 'Protein, carbs and fats must each be a number between 0 and 2000.' });
-    return;
-  }
-
-  const db = await getDatabase();
-  const todayStr = new Date().toISOString().split('T')[0];
-  let log = db.nutritionLogs.find((n) => n.userId === req.user!.id && n.date === todayStr);
-
-  if (!log) {
-    log = {
-      id: `nutri_${Date.now()}`,
-      userId: req.user!.id,
-      date: todayStr,
-      ...DEFAULT_NUTRITION_TARGETS,
-      consumedCalories: 0,
-      consumedProteinGrams: 0,
-      consumedCarbsGrams: 0,
-      consumedFatsGrams: 0,
-      meals: [],
-    };
-    db.nutritionLogs.push(log);
-  }
-
-  const newMeal: MealItem = {
-    id: `meal_${Date.now()}`,
-    type: mealType,
-    name: name.trim(),
-    calories: cals,
-    proteinGrams: protein,
-    carbsGrams: carbs,
-    fatsGrams: fats,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-  };
-
-  log.meals.push(newMeal);
-  recalcNutritionTotals(log);
-
-  await saveDatabase(db);
-  res.status(201).json({ message: 'Meal logged successfully!', meal: newMeal, nutrition: log });
 });
 
 // User Membership — the authenticated user's current membership (prefer the
@@ -1885,3 +1773,6 @@ apiRouter.get(
     });
   }
 );
+
+apiRouter.use(nutritionRouter);
+apiRouter.use(healthRouter);

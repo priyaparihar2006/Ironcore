@@ -193,6 +193,8 @@ export interface ProgressEntry {
 }
 
 export interface MealEntry {
+  source?: string;
+  unknownMacros?: boolean;
   id: string;
   type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
   name: string;

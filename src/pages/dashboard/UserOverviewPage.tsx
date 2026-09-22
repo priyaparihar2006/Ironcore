@@ -384,14 +384,14 @@ export const UserOverviewPage: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold mb-1">
                   <span className="text-neutral-600">Calories</span>
                   <span className="text-neutral-900">
-                    {nutrition.consumedCalories} / {nutrition.dailyCalorieTarget} kcal
+                    {nutrition.consumedCalories} kcal {nutrition.dailyCalorieTarget ? `/ ${nutrition.dailyCalorieTarget} target` : '? target not set'}
                   </span>
                 </div>
                 <div className="w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-orange-500 h-2 rounded-full"
                     style={{
-                      width: `${Math.min(100, (nutrition.consumedCalories / nutrition.dailyCalorieTarget) * 100)}%`,
+                      width: `${Math.min(100, (nutrition.consumedCalories / (nutrition.dailyCalorieTarget || 1)) * 100)}%`,
                     }}
                   ></div>
                 </div>

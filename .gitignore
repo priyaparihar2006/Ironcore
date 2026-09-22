@@ -13,3 +13,8 @@ data/*.db-shm
 data/*.db-wal
 data/ironcore_db.json
 data_backup/
+
+# Workspace package-manager cache used by local verification
+.npm-cache/
+test-results/
+playwright-report/

@@ -75,6 +75,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({ childr
     { label: 'Overview', path: '/dashboard', icon: LayoutDashboard },
     { label: 'My Workouts', path: '/dashboard/workouts', icon: Dumbbell },
     { label: 'Progress', path: '/dashboard/progress', icon: TrendingUp },
+    { label: 'Health & AI', path: '/dashboard/health', icon: Shield },
     { label: 'Nutrition', path: '/dashboard/nutrition', icon: Apple },
     { label: 'Membership', path: '/dashboard/membership', icon: CreditCard },
     { label: 'Bookings', path: '/dashboard/bookings', icon: Calendar },

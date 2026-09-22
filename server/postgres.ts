@@ -31,13 +31,19 @@ import type {
 // ---------------------------------------------------------------------------
 let pool: Pool | null = null;
 
+// Explicit injection for isolated database tests; never available in production.
+export function setPoolForTests(testPool: Pool): void {
+  if (process.env.NODE_ENV !== 'test') throw new Error('Test pool injection is disabled.');
+  pool = testPool;
+}
+
 function resolveDatabaseUrl(): string {
   const url = process.env.DATABASE_URL?.trim();
   if (!url) {
     throw new Error(
       'DATABASE_URL environment variable is required to connect to PostgreSQL. ' +
         'Set it in your .env file — Supabase Dashboard → Project Settings → Database → ' +
-        'Connection string → Session pooler (copy the URI and fill in your real password).'
+        'Connection string → Session pooler (copy the URI and fill in your real password).',
     );
   }
   return url;
@@ -91,6 +97,11 @@ export const TABLES_PARENT_FIRST = [
 ] as const;
 
 const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS wellness_states (
+    "userId" TEXT PRIMARY KEY,
+    payload JSONB NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -105,6 +116,20 @@ const SCHEMA_SQL = `
     "joinedDate" TEXT NOT NULL,
     avatar TEXT,
     "assignedTrainerId" TEXT REFERENCES users(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+  );
+  DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='wellness_states_user_fk') THEN
+      ALTER TABLE wellness_states ADD CONSTRAINT wellness_states_user_fk FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+    END IF;
+  END $$;
+  CREATE TABLE IF NOT EXISTS health_ai_usage (
+    id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(), reserved_usd NUMERIC NOT NULL,
+    status TEXT NOT NULL, input_tokens INTEGER, output_tokens INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS health_ai_usage_date ON health_ai_usage(created_at);
+  CREATE TABLE IF NOT EXISTS health_food_cache (
+    query TEXT PRIMARY KEY, payload JSONB NOT NULL, fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   CREATE INDEX IF NOT EXISTS idx_users_assignedTrainerId ON users("assignedTrainerId");
 
@@ -201,6 +226,7 @@ const SCHEMA_SQL = `
     "consumedFatsGrams" INTEGER NOT NULL DEFAULT 0,
     meals JSONB NOT NULL DEFAULT '[]'::jsonb
   );
+  CREATE UNIQUE INDEX IF NOT EXISTS nutrition_logs_user_day_unique ON nutrition_logs("userId", date);
   CREATE INDEX IF NOT EXISTS idx_nutrition_logs_userId_date ON nutrition_logs("userId", date);
 
   CREATE TABLE IF NOT EXISTS membership_plans (
@@ -289,7 +315,18 @@ const SCHEMA_SQL = `
 `;
 
 export async function ensureSchema(): Promise<void> {
-  await getPool().query(SCHEMA_SQL);
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(73180423)');
+    await client.query(SCHEMA_SQL);
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -309,84 +346,99 @@ function nullsToUndefined<T extends Record<string, unknown>>(row: T): T {
 // Hydrate: PostgreSQL -> in-memory DatabaseSchema.
 // ---------------------------------------------------------------------------
 export async function hydrateAll(): Promise<DatabaseSchema> {
-  const db = getPool();
+  const db = await getPool().connect();
+  try {
+    await db.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
 
-  const users = (await db.query('SELECT * FROM users')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as User
-  );
-  const profiles = (await db.query('SELECT * FROM profiles')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as UserProfile
-  );
-  const trainers = (await db.query('SELECT * FROM trainers')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as TrainerInfo
-  );
-  const workoutPlans = (await db.query('SELECT * FROM workout_plans')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as WorkoutPlan
-  );
-  const workoutAssignments = (await db.query('SELECT * FROM workout_assignments')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as WorkoutAssignment
-  );
-  const progressRecords = (await db.query('SELECT * FROM progress_records')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as ProgressRecord
-  );
-  const nutritionLogs = (await db.query('SELECT * FROM nutrition_logs')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as NutritionLog
-  );
-  const membershipPlans = (await db.query('SELECT * FROM membership_plans')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as MembershipPlan
-  );
-  const userMemberships = (await db.query('SELECT * FROM user_memberships')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as UserMembership
-  );
-  const bookings = (await db.query('SELECT * FROM bookings')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as Booking
-  );
-  const payments = (await db.query('SELECT * FROM payments')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as PaymentRecord
-  );
-  const notifications = (await db.query('SELECT * FROM notifications')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as NotificationItem
-  );
-  const trainerNotes = (await db.query('SELECT * FROM trainer_notes')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as ClientProgressNote
-  );
-  const passwordResetTokens = (await db.query('SELECT * FROM password_reset_tokens')).rows.map(
-    (r) => nullsToUndefined(r) as unknown as PasswordResetToken
-  );
+    const users = (await db.query('SELECT * FROM users')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as User,
+    );
+    const profiles = (await db.query('SELECT * FROM profiles')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as UserProfile,
+    );
+    const trainers = (await db.query('SELECT * FROM trainers')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as TrainerInfo,
+    );
+    const workoutPlans = (await db.query('SELECT * FROM workout_plans')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as WorkoutPlan,
+    );
+    const workoutAssignments = (await db.query('SELECT * FROM workout_assignments')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as WorkoutAssignment,
+    );
+    const progressRecords = (await db.query('SELECT * FROM progress_records')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as ProgressRecord,
+    );
+    const nutritionLogs = (await db.query('SELECT * FROM nutrition_logs')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as NutritionLog,
+    );
+    const membershipPlans = (await db.query('SELECT * FROM membership_plans')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as MembershipPlan,
+    );
+    const userMemberships = (await db.query('SELECT * FROM user_memberships')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as UserMembership,
+    );
+    const bookings = (await db.query('SELECT * FROM bookings')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as Booking,
+    );
+    const payments = (await db.query('SELECT * FROM payments')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as PaymentRecord,
+    );
+    const notifications = (await db.query('SELECT * FROM notifications')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as NotificationItem,
+    );
+    const trainerNotes = (await db.query('SELECT * FROM trainer_notes')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as ClientProgressNote,
+    );
+    const passwordResetTokens = (await db.query('SELECT * FROM password_reset_tokens')).rows.map(
+      (r) => nullsToUndefined(r) as unknown as PasswordResetToken,
+    );
 
-  return {
-    users,
-    profiles,
-    trainers,
-    workoutPlans,
-    workoutAssignments,
-    progressRecords,
-    nutritionLogs,
-    membershipPlans,
-    userMemberships,
-    bookings,
-    payments,
-    notifications,
-    trainerNotes,
-    passwordResetTokens,
-  };
+    const wellnessStates = (await db.query('SELECT * FROM wellness_states')).rows;
+    await db.query('COMMIT');
+    return {
+      wellnessStates,
+      users,
+      profiles,
+      trainers,
+      workoutPlans,
+      workoutAssignments,
+      progressRecords,
+      nutritionLogs,
+      membershipPlans,
+      userMemberships,
+      bookings,
+      payments,
+      notifications,
+      trainerNotes,
+      passwordResetTokens,
+    };
+  } catch (error) {
+    await db.query('ROLLBACK');
+    throw error;
+  } finally {
+    db.release();
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Persist: full in-memory DatabaseSchema -> PostgreSQL.
 //
-// Same "load whole DB, mutate freely, save whole thing back" model as
-// sqlite.ts: every save deletes every row and reinserts the current
-// in-memory state, wrapped in one transaction. All foreign keys are declared
-// DEFERRABLE INITIALLY DEFERRED (see SCHEMA_SQL), and `SET CONSTRAINTS ALL
-// DEFERRED` here defers their checks to COMMIT, so delete/insert order within
-// the transaction doesn't matter — Postgres's equivalent of SQLite's
-// `PRAGMA foreign_keys = OFF` bulk-resync trick.
+// Bulk import is reserved for seeding and explicit migration. Runtime saves
+// use persistChanges() in persistence.ts and never call this function.
+// Deferred constraints allow import ordering inside one atomic transaction.
 // ---------------------------------------------------------------------------
-export async function persistAll(data: DatabaseSchema): Promise<void> {
+export async function persistAll(data: DatabaseSchema, onlyIfEmpty = false): Promise<void> {
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(73180421)');
+    if (
+      onlyIfEmpty &&
+      Number((await client.query('SELECT count(*) AS n FROM users')).rows[0].n) > 0
+    ) {
+      await client.query('COMMIT');
+      return;
+    }
     await client.query('SET CONSTRAINTS ALL DEFERRED');
 
     for (const table of [...TABLES_PARENT_FIRST].reverse()) {
@@ -436,7 +488,7 @@ async function insertUsers(client: PoolClient, rows: User[]): Promise<void> {
         u.joinedDate,
         u.avatar ?? null,
         u.assignedTrainerId ?? null,
-      ]
+      ],
     );
   }
 }
@@ -456,7 +508,7 @@ async function insertMembershipPlans(client: PoolClient, rows: MembershipPlan[])
         Boolean(p.isPopular),
         JSON.stringify(p.features ?? []),
         p.status,
-      ]
+      ],
     );
   }
 }
@@ -475,7 +527,7 @@ async function insertProfiles(client: PoolClient, rows: UserProfile[]): Promise<
         p.muscleMass ?? null,
         p.emergencyContact ?? null,
         p.bio ?? null,
-      ]
+      ],
     );
   }
 }
@@ -500,7 +552,7 @@ async function insertTrainers(client: PoolClient, rows: TrainerInfo[]): Promise<
         t.clientCount,
         JSON.stringify(t.availableSlots ?? []),
         t.status,
-      ]
+      ],
     );
   }
 }
@@ -520,12 +572,15 @@ async function insertWorkoutPlans(client: PoolClient, rows: WorkoutPlan[]): Prom
         w.description ?? null,
         w.createdByTrainerId ?? null,
         JSON.stringify(w.exercises ?? []),
-      ]
+      ],
     );
   }
 }
 
-async function insertWorkoutAssignments(client: PoolClient, rows: WorkoutAssignment[]): Promise<void> {
+async function insertWorkoutAssignments(
+  client: PoolClient,
+  rows: WorkoutAssignment[],
+): Promise<void> {
   for (const a of rows) {
     await client.query(
       `INSERT INTO workout_assignments (id, "userId", "workoutPlanId", "workoutTitle", "assignedByTrainerName", "assignedDate", "scheduledDate", status, "completedAt", notes, exercises)
@@ -542,7 +597,7 @@ async function insertWorkoutAssignments(client: PoolClient, rows: WorkoutAssignm
         a.completedAt ?? null,
         a.notes ?? null,
         JSON.stringify(a.exercises ?? []),
-      ]
+      ],
     );
   }
 }
@@ -562,7 +617,7 @@ async function insertProgressRecords(client: PoolClient, rows: ProgressRecord[])
         Boolean(p.workoutCompleted),
         p.strengthScore,
         p.notes ?? null,
-      ]
+      ],
     );
   }
 }
@@ -585,7 +640,7 @@ async function insertNutritionLogs(client: PoolClient, rows: NutritionLog[]): Pr
         n.fatsTargetGrams,
         n.consumedFatsGrams,
         JSON.stringify(n.meals ?? []),
-      ]
+      ],
     );
   }
 }
@@ -606,7 +661,7 @@ async function insertUserMemberships(client: PoolClient, rows: UserMembership[])
         m.billingCycle,
         m.pricePaid,
         Boolean(m.autoRenew),
-      ]
+      ],
     );
   }
 }
@@ -628,7 +683,7 @@ async function insertBookings(client: PoolClient, rows: Booking[]): Promise<void
         b.status,
         b.location ?? null,
         b.notes ?? null,
-      ]
+      ],
     );
   }
 }
@@ -650,7 +705,7 @@ async function insertPayments(client: PoolClient, rows: PaymentRecord[]): Promis
         p.invoiceNumber ?? null,
         p.planName ?? null,
         p.method ?? null,
-      ]
+      ],
     );
   }
 }
@@ -660,7 +715,7 @@ async function insertNotifications(client: PoolClient, rows: NotificationItem[])
     await client.query(
       `INSERT INTO notifications (id, "userId", title, message, date, read, type)
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [n.id, n.userId, n.title, n.message ?? null, n.date, Boolean(n.read), n.type ?? null]
+      [n.id, n.userId, n.title, n.message ?? null, n.date, Boolean(n.read), n.type ?? null],
     );
   }
 }
@@ -670,16 +725,19 @@ async function insertTrainerNotes(client: PoolClient, rows: ClientProgressNote[]
     await client.query(
       `INSERT INTO trainer_notes (id, "trainerId", "userId", date, note, flag)
        VALUES ($1,$2,$3,$4,$5,$6)`,
-      [n.id, n.trainerId, n.userId, n.date, n.note, n.flag ?? null]
+      [n.id, n.trainerId, n.userId, n.date, n.note, n.flag ?? null],
     );
   }
 }
 
-async function insertPasswordResetTokens(client: PoolClient, rows: PasswordResetToken[]): Promise<void> {
+async function insertPasswordResetTokens(
+  client: PoolClient,
+  rows: PasswordResetToken[],
+): Promise<void> {
   for (const t of rows) {
     await client.query(
       `INSERT INTO password_reset_tokens (token, email, "expiresAt") VALUES ($1,$2,$3)`,
-      [t.token, t.email, t.expiresAt]
+      [t.token, t.email, t.expiresAt],
     );
   }
 }
@@ -723,6 +781,6 @@ export async function seedIfEmpty(seedFallback: () => DatabaseSchema): Promise<P
     return { ranSeed: false, source: 'existing', counts: await getTableCounts() };
   }
 
-  await persistAll(seedFallback());
+  await persistAll(seedFallback(), true);
   return { ranSeed: true, source: 'seed', counts: await getTableCounts() };
 }

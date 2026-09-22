@@ -1,5 +1,6 @@
+import { persistChanges } from './persistence.js';
 import bcrypt from 'bcryptjs';
-import { hydrateAll, persistAll, seedIfEmpty } from './postgres.js';
+import { hydrateAll, seedIfEmpty } from './postgres.js';
 import type {
   User,
   UserProfile,
@@ -668,7 +669,7 @@ export function generateSeedData(): DatabaseSchema {
   };
 }
 
-let dbCache: DatabaseSchema | null = null;
+const snapshots = new WeakMap<DatabaseSchema, DatabaseSchema>();
 
 // An empty, valid DatabaseSchema — used instead of generateSeedData() when
 // demo seeding is disabled (see shouldSeedDemoData() below), so a fresh
@@ -705,49 +706,24 @@ function shouldSeedDemoData(): boolean {
   return process.env.NODE_ENV !== 'production';
 }
 
-// Storage is PostgreSQL/Supabase (see server/postgres.ts). The rest of the
-// app still works exactly like it did against SQLite/JSON: getDatabase()
-// returns one shared in-memory object that routes read and mutate directly;
-// saveDatabase() persists whatever's in that object back to Postgres. The
-// first call to getDatabase() also seeds the database (via seedIfEmpty in
-// server/postgres.ts) ONLY when it's completely empty — falling back to the
-// built-in seed data when shouldSeedDemoData() allows it, otherwise starting
-// from a genuinely empty database. Existing data (e.g. migrated from SQLite
-// via `npm run migrate:postgres`) is never touched by this.
-let dbPromise: Promise<DatabaseSchema> | null = null;
-
+// Each request receives a fresh snapshot. Saves use optimistic, row-level updates.
+let initialization: Promise<unknown> | undefined;
 export async function getDatabase(): Promise<DatabaseSchema> {
-  if (dbCache) return dbCache;
-  if (dbPromise) return dbPromise;
-
-  dbPromise = (async () => {
-    const seedAllowed = shouldSeedDemoData();
-    const result = await seedIfEmpty(seedAllowed ? generateSeedData : emptyDatabase);
-
-    if (result.ranSeed) {
-      if (!seedAllowed) {
-        console.log(
-          '[db] No existing data found — starting with an EMPTY database ' +
-            '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
-            'once to create the built-in demo accounts instead.'
-        );
-      } else {
-        console.log('[db] No existing data found — seeded PostgreSQL with built-in demo data:', result.counts);
-      }
-    }
-
-    dbCache = await hydrateAll();
-    return dbCache;
-  })();
-
-  return dbPromise;
+  if (!initialization)
+    initialization = seedIfEmpty(shouldSeedDemoData() ? generateSeedData : emptyDatabase).catch(
+      (error) => {
+        initialization = undefined;
+        throw error;
+      },
+    );
+  await initialization;
+  const db = await hydrateAll();
+  snapshots.set(db, structuredClone(db));
+  return db;
 }
-
 export async function saveDatabase(data: DatabaseSchema): Promise<void> {
-  dbCache = data;
-  try {
-    await persistAll(data);
-  } catch (e) {
-    console.error('Failed to write PostgreSQL database:', e);
-  }
+  const before = snapshots.get(data);
+  if (!before) throw new Error('Cannot save a database without an original snapshot.');
+  await persistChanges(before, data);
+  snapshots.set(data, structuredClone(data));
 }

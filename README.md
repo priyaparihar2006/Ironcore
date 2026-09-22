@@ -203,3 +203,8 @@ The notification system supports:
                     │ ironcore_db.json │
                     │ Local Persistence│
                     └──────────────────┘ 
+
+
+## AI wellness integration
+
+The Health & AI dashboard adds personalized estimates, meal assistance and progress reports. See [setup and implementation status](docs/ai-health-setup.md) for server configuration, policy review, migration and tests. The active database is PostgreSQL; runtime saves now use conflict-checked row updates instead of full snapshots.

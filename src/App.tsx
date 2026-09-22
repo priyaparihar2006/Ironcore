@@ -1,3 +1,4 @@
+import { UserHealthPage } from './pages/dashboard/UserHealthPage';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -118,6 +119,8 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/dashboard/health" element={<ProtectedRoute allowedRoles={['USER', 'TRAINER', 'ADMIN']}><UserDashboardLayout><UserHealthPage /></UserDashboardLayout></ProtectedRoute>} />
 
           {/* Trainer Portal Routes */}
           <Route

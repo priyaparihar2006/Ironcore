@@ -1,3 +1,4 @@
+import type { WellnessState } from '../src/health.js';
 // Shared data-model interfaces for IronCore.
 // Extracted from server/db.ts so both server/db.ts (the public data-access API
 // that server/api.ts imports from) and server/sqlite.ts (the SQLite storage
@@ -98,6 +99,12 @@ export interface ProgressRecord {
 }
 
 export interface MealItem {
+  source?: string;
+  draftId?: string;
+  requestId?: string;
+  requestHash?: string;
+  eatenAt?: string;
+  unknownMacros?: boolean;
   id: string;
   type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
   name: string;
@@ -202,6 +209,7 @@ export interface PasswordResetToken {
 }
 
 export interface DatabaseSchema {
+  wellnessStates?: { userId: string; payload: WellnessState }[];
   users: User[];
   profiles: UserProfile[];
   trainers: TrainerInfo[];

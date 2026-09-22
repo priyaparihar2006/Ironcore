@@ -55,7 +55,7 @@ function globalErrorHandler(err: unknown, req: Request, res: Response, _next: Ne
     || 500;
 
   res.status(status).json({
-    error: isProduction || status >= 500 ? 'Internal server error. Please try again.' : error.message,
+    error: status >= 500 ? 'Internal server error. Please try again.' : error.message,
   });
 }
 

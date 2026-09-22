@@ -1,396 +1,587 @@
-import React, { useEffect, useState } from 'react';
-import { Apple, Flame, Plus, Clock, AlertCircle, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Apple, Plus, Sparkles, Pencil, Trash2, X } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
-import { NutritionData, MealEntry } from '../../types';
+import type { NutritionData, MealEntry } from '../../types';
+import type { HealthDashboard, MealDraft } from '../../health';
 
-export const UserNutritionPage: React.FC = () => {
-  const [nutrition, setNutrition] = useState<NutritionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Modal State
-  const [showModal, setShowModal] = useState(false);
-  const [mealType, setMealType] = useState<'Breakfast' | 'Lunch' | 'Dinner' | 'Snack'>('Lunch');
-  const [mealName, setMealName] = useState('');
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fats, setFats] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const fetchNutrition = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await apiRequest<{ nutrition: NutritionData }>('/user/nutrition');
-      setNutrition(res.nutrition);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load nutrition data.');
-    } finally {
-      setLoading(false);
-    }
+const input = 'w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm';
+const button = 'rounded-xl bg-[#080512] text-white px-4 py-3 text-sm font-bold disabled:opacity-40';
+const blank = {
+  type: 'Lunch',
+  name: '',
+  calories: '',
+  proteinGrams: '',
+  carbsGrams: '',
+  fatsGrams: '',
+};
+function todayLocal(timezone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  return ['year', 'month', 'day'].map((k) => parts.find((p) => p.type === k)!.value).join('-');
+}
+export function UserNutritionPage() {
+  const [nutrition, setNutrition] = useState<NutritionData>();
+  const [health, setHealth] = useState<HealthDashboard>();
+  const [date, setDate] = useState('');
+  const [busy, setBusy] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [modal, setModal] = useState(false);
+  const [editId, setEditId] = useState('');
+  const [removeId, setRemoveId] = useState('');
+  const [form, setForm] = useState(blank);
+  const [description, setDescription] = useState('');
+  const [draft, setDraft] = useState<MealDraft>();
+  const [portions, setPortions] = useState<{ food: string; grams: number }[]>([]);
+  const [confirmed, setConfirmed] = useState(false);
+  const [suitable, setSuitable] = useState(false);
+  const [mealType, setMealType] = useState('Lunch');
+  const [portionDirty, setPortionDirty] = useState(false);
+  const requestId = useRef(crypto.randomUUID());
+  const draftRequestId = useRef(crypto.randomUUID());
+  const load = async (day = date) => {
+    const result = await apiRequest<{ nutrition: NutritionData }>(
+      `/user/nutrition${day ? '?date=' + day : ''}`,
+    );
+    setNutrition(result.nutrition);
+    return result;
   };
-
   useEffect(() => {
-    fetchNutrition();
+    apiRequest<HealthDashboard>('/user/health')
+      .then((h) => {
+        setHealth(h);
+        setDate(todayLocal(h.state.preferences?.timezone || 'UTC'));
+      })
+      .catch((e) => {
+        setError(e.message);
+        setDate(todayLocal('UTC'));
+      });
   }, []);
-
-  const closeModal = () => {
-    setShowModal(false);
-    setMealName('');
-    setCalories('');
-    setProtein('');
-    setCarbs('');
-    setFats('');
-    setFormError(null);
-  };
-
-  const handleAddMeal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    if (!mealName.trim()) {
-      setFormError('Enter a meal name / description.');
-      return;
-    }
-    const cals = Number(calories);
-    if (!Number.isFinite(cals) || cals < 0 || cals > 20000) {
-      setFormError('Calories must be a number between 0 and 20000.');
-      return;
-    }
-    const macros = { protein, carbs, fats };
-    for (const [label, raw] of Object.entries(macros)) {
-      const n = raw === '' ? 0 : Number(raw);
-      if (!Number.isFinite(n) || n < 0 || n > 2000) {
-        setFormError(`${label[0].toUpperCase()}${label.slice(1)} must be between 0 and 2000 g.`);
-        return;
-      }
-    }
-
-    setSubmitting(true);
+  useEffect(() => {
+    if (!date) return;
+    let cancelled = false;
+    setNutrition(undefined);
+    apiRequest<{ nutrition: NutritionData }>(`/user/nutrition?date=${date}`)
+      .then((result) => {
+        if (!cancelled) setNutrition(result.nutrition);
+      })
+      .catch((error) => {
+        if (!cancelled) setError(error.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
+  const run = async (name: string, action: () => Promise<void>) => {
+    setBusy(name);
+    setError('');
+    setNotice('');
     try {
-      await apiRequest('/user/nutrition/meals', {
+      await action();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setBusy('');
+    }
+  };
+  const startManual = (meal?: MealEntry) => {
+    setEditId(meal?.id || '');
+    setError('');
+    setForm(
+      meal
+        ? {
+            type: meal.type,
+            name: meal.name,
+            calories: String(meal.calories),
+            proteinGrams: meal.unknownMacros ? '' : String(meal.proteinGrams),
+            carbsGrams: meal.unknownMacros ? '' : String(meal.carbsGrams),
+            fatsGrams: meal.unknownMacros ? '' : String(meal.fatsGrams),
+          }
+        : blank,
+    );
+    requestId.current = crypto.randomUUID();
+    setModal(true);
+  };
+  const saveManual = (event: React.FormEvent) => {
+    event.preventDefault();
+    run('save', async () => {
+      const fields = Object.fromEntries(
+        ['calories', 'proteinGrams', 'carbsGrams', 'fatsGrams'].map((k) => [
+          k,
+          form[k] === '' ? null : Number(form[k]),
+        ]),
+      );
+      const result = await apiRequest<{ nutrition: NutritionData }>(
+        editId ? `/user/nutrition/meals/${editId}` : '/user/nutrition/meals',
+        {
+          method: editId ? 'PATCH' : 'POST',
+          body: JSON.stringify({ ...form, ...fields, date, requestId: requestId.current }),
+        },
+      );
+      setNutrition(result.nutrition);
+      setModal(false);
+      setNotice('Meal saved.');
+    });
+  };
+  const estimateMeal = (corrected = false) =>
+    run('estimate', async () => {
+      const r = await apiRequest<{ draft: MealDraft }>('/user/nutrition/estimate-meal', {
+        method: 'POST',
+        body: JSON.stringify({ description, ...(corrected ? { portions } : {}) }),
+      });
+      setDraft(r.draft);
+      setPortions(r.draft.portions.map((p) => ({ food: p.name, grams: p.grams })));
+      setConfirmed(false);
+      setSuitable(false);
+      setPortionDirty(false);
+      draftRequestId.current = crypto.randomUUID();
+    });
+  const saveDraft = () =>
+    run('confirm', async () => {
+      const result = await apiRequest<{ nutrition: NutritionData }>('/user/nutrition/meals', {
         method: 'POST',
         body: JSON.stringify({
+          draftId: draft!.id,
           type: mealType,
-          name: mealName.trim(),
-          calories: cals,
-          proteinGrams: protein === '' ? 0 : Number(protein),
-          carbsGrams: carbs === '' ? 0 : Number(carbs),
-          fatsGrams: fats === '' ? 0 : Number(fats),
+          date,
+          confirmed,
+          suitableForDiet: suitable,
+          requestId: draftRequestId.current,
         }),
       });
-      closeModal();
-      await fetchNutrition();
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Could not log this meal.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-neutral-200 rounded-xl w-64"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-neutral-200 rounded-3xl"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !nutrition) {
-    return (
-      <div className="p-8 rounded-3xl bg-red-50 border border-red-200 text-red-700 text-center">
-        <AlertCircle className="w-10 h-10 mx-auto text-red-500 mb-2" />
-        <h3 className="font-bold">Failed to load nutrition</h3>
-        <p className="text-xs text-red-600 mb-4">{error}</p>
-        <button onClick={fetchNutrition} className="px-5 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const calRemaining = Math.max(0, nutrition.dailyCalorieTarget - nutrition.consumedCalories);
-
+      setNutrition(result.nutrition);
+      setDraft(undefined);
+      setDescription('');
+      setNotice('Confirmed meal added to your day.');
+    });
+  const timezone = health?.state.preferences?.timezone || 'UTC';
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
-            Nutrition & Macro Fuel
+          <h1 className="text-3xl font-black flex items-center gap-2">
+            <Apple /> Nutrition
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Maintain lean muscle synthesis with disciplined calorie counting and targeted macro distribution.
+          <p className="mt-2 text-sm text-neutral-500">
+            Log what you eat, review portions and build a clearer picture of your day.
           </p>
         </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-5 py-3 rounded-2xl bg-[#080512] text-white text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-lg shadow-purple-950/5"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Log Meal</span>
+        <button className={button} disabled={!!busy || !date} onClick={() => startManual()}>
+          <Plus size={16} className="inline mr-2" />
+          Log a meal
         </button>
+      </header>
+      <div className="flex flex-wrap gap-4 items-end">
+        <label className="text-sm font-semibold">
+          Your day
+          <input
+            aria-label="Meal log date"
+            type="date"
+            min="2000-01-01"
+            max={todayLocal(timezone)}
+            value={date}
+            onChange={(e) => {
+              setDate(e.target.value);
+              setError('');
+            }}
+            className={input + ' mt-1'}
+            disabled={!!busy}
+          />
+        </label>
+        <p className="text-xs text-neutral-500 pb-3">
+          {timezone} ?{' '}
+          <Link className="underline text-purple-700" to="/dashboard/health">
+            Health preferences & targets
+          </Link>
+        </p>
       </div>
-
-      {/* Main Calorie & Macros Dashboard Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Calories */}
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Daily Calories</span>
-            <Flame className="w-4 h-4 text-orange-500" />
-          </div>
-          <div className="text-2xl font-black text-[#080512]">
-            {nutrition.consumedCalories} <span className="text-xs font-medium text-neutral-400">/ {nutrition.dailyCalorieTarget} kcal</span>
-          </div>
-          <div className="mt-3 w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-orange-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (nutrition.consumedCalories / nutrition.dailyCalorieTarget) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="text-[11px] text-neutral-500 font-semibold mt-2">
-            {calRemaining} kcal remaining today
-          </div>
+      {error && (
+        <div role="alert" className="rounded-2xl bg-red-50 text-red-800 p-4">
+          {error}{' '}
+          <button
+            className="underline"
+            onClick={() =>
+              run('reload', async () => {
+                await load();
+              })
+            }
+          >
+            Reload day
+          </button>
         </div>
-
-        {/* Protein */}
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Protein</span>
-            <span className="text-xs font-black text-purple-700">4 kcal/g</span>
-          </div>
-          <div className="text-2xl font-black text-[#080512]">
-            {nutrition.consumedProteinGrams}g <span className="text-xs font-medium text-neutral-400">/ {nutrition.proteinTargetGrams}g</span>
-          </div>
-          <div className="mt-3 w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-purple-600 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (nutrition.consumedProteinGrams / nutrition.proteinTargetGrams) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="text-[11px] text-purple-700 font-semibold mt-2">
-            {Math.max(0, nutrition.proteinTargetGrams - nutrition.consumedProteinGrams)}g needed for recovery
-          </div>
-        </div>
-
-        {/* Carbs */}
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Carbohydrates</span>
-            <span className="text-xs font-black text-blue-700">4 kcal/g</span>
-          </div>
-          <div className="text-2xl font-black text-[#080512]">
-            {nutrition.consumedCarbsGrams}g <span className="text-xs font-medium text-neutral-400">/ {nutrition.carbsTargetGrams}g</span>
-          </div>
-          <div className="mt-3 w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (nutrition.consumedCarbsGrams / nutrition.carbsTargetGrams) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="text-[11px] text-neutral-500 font-semibold mt-2">
-            Glycogen fuel for high-intensity lifting
-          </div>
-        </div>
-
-        {/* Fats */}
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Essential Fats</span>
-            <span className="text-xs font-black text-amber-700">9 kcal/g</span>
-          </div>
-          <div className="text-2xl font-black text-[#080512]">
-            {nutrition.consumedFatsGrams}g <span className="text-xs font-medium text-neutral-400">/ {nutrition.fatsTargetGrams}g</span>
-          </div>
-          <div className="mt-3 w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-amber-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (nutrition.consumedFatsGrams / nutrition.fatsTargetGrams) * 100)}%` }}
-            ></div>
-          </div>
-          <div className="text-[11px] text-neutral-500 font-semibold mt-2">
-            Hormonal health & vitamin absorption
-          </div>
-        </div>
-      </div>
-
-      {/* Meals Log for Today */}
-      <div className="bg-white rounded-[32px] border border-neutral-200/80 shadow-sm overflow-hidden p-6 sm:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-black text-[#080512]">Today's Recorded Meals</h2>
-            <p className="text-xs text-neutral-500 mt-0.5">Chronological nutritional input</p>
-          </div>
-          <span className="text-xs font-bold text-neutral-400">{nutrition.meals.length} Meals Logged</span>
-        </div>
-
-        {nutrition.meals.length === 0 ? (
-          <div className="py-12 text-center text-neutral-400">
-            <Apple className="w-10 h-10 mx-auto text-neutral-300 mb-2" />
-            <p className="text-sm font-medium">No meals logged for today yet.</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="text-xs font-bold text-purple-700 hover:underline mt-2 inline-block cursor-pointer"
-            >
-              + Log breakfast or snack
-            </button>
-          </div>
-        ) : (
-          <div className="divide-y divide-neutral-100">
-            {nutrition.meals.map((meal: MealEntry) => (
-              <div key={meal.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider ${
-                    meal.type === 'Breakfast'
-                      ? 'bg-amber-100 text-amber-800'
-                      : meal.type === 'Lunch'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : meal.type === 'Dinner'
-                      ? 'bg-indigo-100 text-indigo-800'
-                      : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {meal.type}
-                  </span>
-                  <div>
-                    <h4 className="text-sm font-black text-neutral-900">{meal.name}</h4>
-                    <span className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
-                      <Clock className="w-3 h-3" /> Logged at {meal.time}
-                    </span>
+      )}
+      {notice && (
+        <p role="status" className="rounded-2xl bg-emerald-50 text-emerald-900 p-4">
+          {notice}
+        </p>
+      )}
+      {!nutrition && !error && <p role="status">Loading meal log?</p>}
+      {nutrition && (
+        <>
+          {!nutrition.dailyCalorieTarget && (
+            <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+              No personalized targets for this day. You can still log meals.{' '}
+              <Link className="underline font-bold" to="/dashboard/health">
+                Review your health estimates
+              </Link>
+              .
+            </p>
+          )}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              ['Calories', nutrition.consumedCalories, nutrition.dailyCalorieTarget, 'kcal'],
+              ['Protein', nutrition.consumedProteinGrams, nutrition.proteinTargetGrams, 'g'],
+              ['Carbs', nutrition.consumedCarbsGrams, nutrition.carbsTargetGrams, 'g'],
+              ['Fat', nutrition.consumedFatsGrams, nutrition.fatsTargetGrams, 'g'],
+            ].map(([label, consumed, target, unit]) => (
+              <article
+                key={String(label)}
+                className="bg-white rounded-3xl border border-neutral-200 p-5"
+              >
+                <p className="text-xs uppercase font-bold text-neutral-500">{label}</p>
+                <p className="text-2xl font-black mt-2">
+                  {consumed} <span className="text-xs font-normal">{unit}</span>
+                </p>
+                <p className="text-xs text-neutral-500 mt-1">
+                  {Number(target) > 0 ? `of ${target} ${unit}` : 'Target not set'}
+                </p>
+                {Number(target) > 0 && (
+                  <div className="h-2 rounded-full bg-neutral-100 mt-3 overflow-hidden">
+                    <div
+                      className="h-full bg-purple-600"
+                      style={{
+                        width: Math.min(100, (Number(consumed) / Number(target)) * 100) + '%',
+                      }}
+                    />
                   </div>
-                </div>
-
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="font-black text-[#080512]">{meal.calories} kcal</div>
-                  <div className="flex items-center gap-3 text-[11px] text-neutral-500 font-mono">
-                    <span className="text-purple-700 font-bold">{meal.proteinGrams}g P</span>
-                    <span className="text-blue-700 font-bold">{meal.carbsGrams}g C</span>
-                    <span className="text-amber-700 font-bold">{meal.fatsGrams}g F</span>
-                  </div>
-                </div>
-              </div>
+                )}
+              </article>
             ))}
           </div>
+          {nutrition.meals.some((m) => m.unknownMacros || !m.source) && (
+            <p className="text-xs text-amber-800">
+              Some entries have unknown macros or legacy provenance. These totals may be incomplete.
+            </p>
+          )}
+          <section className="bg-white rounded-3xl border border-neutral-200 p-6 space-y-4">
+            <h2 className="text-xl font-black">Meals for {date}</h2>
+            {!nutrition.meals.length ? (
+              <p className="text-sm text-neutral-500">
+                No meals logged. An empty day does not mean you ate nothing.
+              </p>
+            ) : (
+              <div className="divide-y divide-neutral-100">
+                {nutrition.meals.map((meal) => (
+                  <article key={meal.id} className="py-4 flex flex-wrap justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase text-purple-700 font-bold">
+                        {meal.type} ? {meal.time}
+                      </p>
+                      <h3 className="font-bold mt-1">{meal.name}</h3>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        {meal.calories} kcal ? Protein {meal.proteinGrams} g ? Carbs{' '}
+                        {meal.carbsGrams} g ? Fat {meal.fatsGrams} g
+                      </p>
+                      <p className="text-xs text-neutral-400 mt-1">
+                        {meal.source || 'Legacy manual entry'}
+                        {meal.unknownMacros ? ' ? Some macros unknown' : ''}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        aria-label={`Edit ${meal.name}`}
+                        disabled={!!busy}
+                        className="p-2 rounded-xl hover:bg-neutral-100"
+                        onClick={() => startManual(meal)}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        aria-label={`Delete ${meal.name}`}
+                        disabled={!!busy}
+                        className="p-2 rounded-xl text-red-700 hover:bg-red-50"
+                        onClick={() => setRemoveId(meal.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      {removeId === meal.id && (
+                        <>
+                          <button
+                            disabled={!!busy}
+                            className="text-xs underline text-red-700"
+                            onClick={() =>
+                              run('delete', async () => {
+                                const r = await apiRequest<{ nutrition: NutritionData }>(
+                                  `/user/nutrition/meals/${meal.id}`,
+                                  { method: 'DELETE' },
+                                );
+                                setNutrition(r.nutrition);
+                                setRemoveId('');
+                              })
+                            }
+                          >
+                            Confirm delete
+                          </button>
+                          <button className="text-xs underline" onClick={() => setRemoveId('')}>
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+      <section className="bg-purple-50 rounded-3xl border border-purple-200 p-6 space-y-4">
+        <h2 className="text-xl font-black flex gap-2 items-center">
+          <Sparkles size={21} /> Describe your meal
+        </h2>
+        <p className="text-sm text-neutral-600">
+          Include quantities in grams, raw or cooked state, and cooking oil. For mixed dishes, list
+          ingredients. You will review database matches before anything is saved.
+        </p>
+        {(!health?.aiAvailable ||
+          !health?.foodAvailable ||
+          !health?.state.preferences?.aiConsent) && (
+          <p className="text-sm text-amber-900">
+            Meal assistance needs configured AI and food lookup, plus{' '}
+            <Link to="/dashboard/health" className="underline">
+              your AI consent
+            </Link>
+            . Manual entry is always available.
+          </p>
         )}
-      </div>
-
-      {/* Add Meal Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-[#080512]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-neutral-200 animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black text-[#080512]">Log Meal / Snack</h3>
-              <button onClick={closeModal} className="p-1 rounded-full hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
+        <label className="block text-sm font-semibold">
+          Meal description
+          <textarea
+            rows={3}
+            maxLength={1500}
+            value={description}
+            className={input + ' mt-1'}
+            placeholder="150 g cooked white rice, 100 g boiled lentils, 5 g olive oil"
+            onChange={(e) => {
+              setDescription(e.target.value);
+              setDraft(undefined);
+            }}
+            disabled={!!busy}
+          />
+        </label>
+        <button
+          className={button}
+          disabled={
+            !!busy ||
+            !description.trim() ||
+            !health?.aiAvailable ||
+            !health.foodAvailable ||
+            !health.state.preferences?.aiConsent
+          }
+          onClick={() => estimateMeal()}
+        >
+          {busy === 'estimate' ? 'Looking up your meal?' : 'Estimate meal'}
+        </button>
+        {draft?.status === 'needs_input' && (
+          <div className="bg-white rounded-xl p-4">
+            <h3 className="font-bold">A little more detail is needed</h3>
+            <ul className="list-disc pl-5 text-sm mt-2">
+              {draft.questions.map((q) => (
+                <li key={q}>{q}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-neutral-500 mt-2">
+              Update your description above and estimate again.
+            </p>
+          </div>
+        )}
+        {draft?.status === 'ready' && (
+          <div className="space-y-4 bg-white rounded-2xl p-4">
+            <h3 className="font-bold">Review candidate food matches</h3>
+            {portions.map((p, i) => (
+              <div key={i} className="grid grid-cols-[1fr_90px] gap-3">
+                <label className="text-xs">
+                  Food / preparation
+                  <input
+                    className={input}
+                    value={p.food}
+                    onChange={(e) => {
+                      setPortions((v) =>
+                        v.map((q, j) => (j === i ? { ...q, food: e.target.value } : q)),
+                      );
+                      setPortionDirty(true);
+                      setConfirmed(false);
+                    }}
+                  />
+                  <a
+                    href={draft.portions[i]?.source}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-purple-700 underline"
+                  >
+                    USDA source
+                  </a>
+                </label>
+                <label className="text-xs">
+                  Grams
+                  <input
+                    type="number"
+                    min={1}
+                    max={2000}
+                    className={input}
+                    value={p.grams}
+                    onChange={(e) => {
+                      setPortions((v) =>
+                        v.map((q, j) => (j === i ? { ...q, grams: Number(e.target.value) } : q)),
+                      );
+                      setPortionDirty(true);
+                      setConfirmed(false);
+                    }}
+                  />
+                </label>
+              </div>
+            ))}
+            {portionDirty && (
+              <button disabled={!!busy} className={button} onClick={() => estimateMeal(true)}>
+                Recalculate edited portions
+              </button>
+            )}
+            <p className="font-bold">
+              {draft.calories} kcal ? Protein {draft.proteinGrams} g ? Carbs {draft.carbsGrams} g ?
+              Fat {draft.fatsGrams} g
+            </p>
+            {draft.assumptions.map((a) => (
+              <p className="text-xs text-neutral-500" key={a}>
+                {a}
+              </p>
+            ))}
+            <label className="block text-sm">
+              Meal type
+              <select
+                className={input + ' mt-1'}
+                value={mealType}
+                onChange={(e) => setMealType(e.target.value)}
+              >
+                {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                disabled={portionDirty}
+                onChange={(e) => setConfirmed(e.target.checked)}
+              />
+              I checked the food matches, preparation and portions.
+            </label>
+            <label className="flex gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={suitable}
+                onChange={(e) => setSuitable(e.target.checked)}
+              />
+              These foods fit my saved diet preference; they may be reused in meal ideas.
+            </label>
+            <button
+              disabled={!!busy || !confirmed || portionDirty || !date}
+              className={button}
+              onClick={saveDraft}
+            >
+              {busy === 'confirm' ? 'Saving?' : 'Confirm and log meal'}
+            </button>
+          </div>
+        )}
+      </section>
+      {modal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 p-4 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="meal-title"
+        >
+          <form
+            onSubmit={saveManual}
+            className="bg-white rounded-3xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between">
+              <h2 id="meal-title" className="text-xl font-black">
+                {editId ? 'Edit meal' : 'Log a meal'}
+              </h2>
+              <button
+                type="button"
+                aria-label="Close meal form"
+                onClick={() => setModal(false)}
+                disabled={!!busy}
+              >
+                <X />
               </button>
             </div>
-
-            <form onSubmit={handleAddMeal} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1.5">Meal Classification</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const).map((t) => (
-                    <button
-                      type="button"
-                      key={t}
-                      onClick={() => setMealType(t)}
-                      className={`py-2 text-xs font-bold rounded-xl border transition-all ${
-                        mealType === t
-                          ? 'bg-[#080512] text-white border-[#080512]'
-                          : 'bg-neutral-50 text-neutral-700 border-neutral-200'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Meal / Food Description *</label>
-                <input
-                  type="text"
-                  required
-                  value={mealName}
-                  onChange={(e) => setMealName(e.target.value)}
-                  placeholder="e.g. Grass-fed Ribeye with Grilled Asparagus"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium focus:ring-2 focus:ring-[#080512]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Total Calories (kcal) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                    placeholder="650"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Protein (g)</label>
-                  <input
-                    type="number"
-                    value={protein}
-                    onChange={(e) => setProtein(e.target.value)}
-                    placeholder="45"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Carbs (g)</label>
-                  <input
-                    type="number"
-                    value={carbs}
-                    onChange={(e) => setCarbs(e.target.value)}
-                    placeholder="30"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Fats (g)</label>
-                  <input
-                    type="number"
-                    value={fats}
-                    onChange={(e) => setFats(e.target.value)}
-                    placeholder="18"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
-                </div>
-              </div>
-
-              {formError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  {formError}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
+            <p className="text-xs text-neutral-500">
+              For {date}. Leave unknown macros blank; they will be marked incomplete.
+            </p>
+            <label className="block text-sm">
+              Meal type
+              <select
+                className={input}
+                value={form.type}
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
               >
-                {submitting ? 'Adding...' : 'Record Meal'}
-              </button>
-            </form>
-          </div>
+                {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              Meal name
+              <input
+                autoFocus
+                required
+                maxLength={500}
+                className={input}
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ['calories', 'Calories (kcal)'],
+                ['proteinGrams', 'Protein (g)'],
+                ['carbsGrams', 'Carbs (g)'],
+                ['fatsGrams', 'Fat (g)'],
+              ].map(([key, label]) => (
+                <label className="text-sm" key={key}>
+                  {label}
+                  <input
+                    className={input}
+                    type="number"
+                    min={0}
+                    max={key === 'calories' ? 20000 : 2000}
+                    step="0.1"
+                    required={key === 'calories'}
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                  />
+                </label>
+              ))}
+            </div>
+            {error && (
+              <p role="alert" className="text-sm text-red-700">
+                {error}
+              </p>
+            )}
+            <button disabled={!!busy} className={button}>
+              {busy === 'save' ? 'Saving?' : 'Save meal'}
+            </button>
+          </form>
         </div>
       )}
     </div>
   );
-};
+}

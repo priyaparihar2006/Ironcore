@@ -43,10 +43,10 @@ app.use('/', apiRouter);
 
 // Global Error Handler for Vercel Serverless Function
 app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[Vercel API Error]', err);
+  console.error('[Vercel API Error]', err?.code || 'request_failed');
   if (res.headersSent) return;
-  const message = err?.message || 'Internal Server Error';
-  res.status(500).json({ error: message });
+  const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 500 ? err.status : 500;
+  res.status(status).json({ error: status < 500 ? err.message : 'Service unavailable. Please try again.' });
 });
 
 export default app;

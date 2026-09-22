@@ -54,3 +54,11 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #CBC5DE;
 }
+
+/* Print only the report selected by the member, not private onboarding fields. */
+@media print {
+  body:has(.health-report) * { visibility: hidden; }
+  body .health-report, body .health-report * { visibility: visible; }
+  .health-report { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; }
+  .health-report button, .health-report select, .health-report label { display: none; }
+}
