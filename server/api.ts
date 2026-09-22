@@ -1,10 +1,12 @@
+import { validateUserInput } from './inputValidation.js';
+import { publicErrorHandler } from './httpErrors.js';
+import { hashPassword, verifyPassword, verifyUnknownAccount } from './passwords.js';
 import { nutritionRouter } from './nutrition/routes.js';
 import { healthRouter } from './health/routes.js';
 import { userDate } from './health/state.js';
 import { asyncRouter } from './router.js';
 import express, { Response } from 'express';
 import rateLimit from 'express-rate-limit';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
   getDatabase,
@@ -30,6 +32,7 @@ import {
 import { parseAndValidateAvatarDataUrl, uploadAvatarImage } from './storage.js';
 
 export const apiRouter = asyncRouter();
+apiRouter.use(validateUserInput);
 
 // ==========================================
 // RATE LIMITING — sensitive auth endpoints only. Limits are configurable via
@@ -112,27 +115,6 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       fitnessGoal,
     } = req.body;
 
-    if (!name || !email || !password) {
-      res.status(400).json({ error: 'Name, email, and password are required.' });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      res.status(400).json({ error: 'Please enter a valid email address.' });
-      return;
-    }
-
-    if (password.length < 8) {
-      res.status(400).json({ error: 'Password must be at least 8 characters long.' });
-      return;
-    }
-
-    if (confirmPassword && password !== confirmPassword) {
-      res.status(400).json({ error: 'Passwords do not match.' });
-      return;
-    }
-
     const db = await getDatabase();
 
     // Check duplicate email
@@ -144,8 +126,8 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       return;
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const userId = `user_${Date.now()}`;
+    const passwordHash = await hashPassword(password);
+    const userId = `user_${crypto.randomUUID()}`;
 
     const newUser: User = {
       id: userId,
@@ -212,8 +194,7 @@ apiRouter.post('/auth/register', registerRateLimiter, async (req, res: Response)
       user: sanitizeUser(newUser),
     });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ error: 'Internal server error during registration.' });
+    throw error;
   }
 });
 
@@ -222,28 +203,19 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req, res: Response): Prom
   try {
     const { email, password, rememberMe } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({ error: 'Email and password are required.' });
-      return;
-    }
-
     const db = await getDatabase();
     const user = db.users.find(
       (u) => u.email.toLowerCase() === email.toLowerCase().trim()
     );
 
     if (!user) {
+      await verifyUnknownAccount(password);
       res.status(401).json({ error: 'Invalid email or password.' });
       return;
     }
 
-    if (user.status !== 'ACTIVE') {
-      res.status(403).json({ error: 'This account has been deactivated. Please contact support.' });
-      return;
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    if (!isValidPassword) {
+    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    if (!isValidPassword || user.status !== 'ACTIVE') {
       res.status(401).json({ error: 'Invalid email or password.' });
       return;
     }
@@ -256,8 +228,7 @@ apiRouter.post('/auth/login', loginRateLimiter, async (req, res: Response): Prom
       user: sanitizeUser(user),
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Internal server error during sign in.' });
+    throw error;
   }
 });
 
@@ -415,7 +386,13 @@ apiRouter.put(
   avatarUploadRateLimiter,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const parsed = parseAndValidateAvatarDataUrl(req.body?.image);
+      let parsed: ReturnType<typeof parseAndValidateAvatarDataUrl>;
+      try {
+        parsed = parseAndValidateAvatarDataUrl(req.body?.image);
+      } catch (error) {
+        res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid image.' });
+        return;
+      }
       const avatarUrl = await uploadAvatarImage(req.user!.id, parsed);
 
       const db = await getDatabase();
@@ -433,31 +410,15 @@ apiRouter.put(
         user: sanitizeUser(db.users[userIndex]),
       });
     } catch (error) {
-      // parseAndValidateAvatarDataUrl / uploadAvatarImage throw plain Errors
-      // with user-safe messages (invalid type, too large, storage not
-      // configured, upload failed) — safe to return directly, unlike a raw
-      // unexpected error.
-      const message = error instanceof Error ? error.message : 'Failed to update profile photo.';
-      console.error('Avatar update error:', error);
-      res.status(400).json({ error: message });
+      throw error;
     }
   }
 );
 
 // Change Password
-apiRouter.put('/auth/change-password', authMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+apiRouter.put('/auth/change-password', authMiddleware, loginRateLimiter, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      res.status(400).json({ error: 'Current password and new password are required.' });
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      res.status(400).json({ error: 'New password must be at least 8 characters long.' });
-      return;
-    }
-
     const db = await getDatabase();
     const user = db.users.find((u) => u.id === req.user!.id);
     if (!user) {
@@ -465,19 +426,18 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
       return;
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isMatch = await verifyPassword(currentPassword, user.passwordHash);
     if (!isMatch) {
       res.status(400).json({ error: 'Incorrect current password.' });
       return;
     }
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = await hashPassword(newPassword);
     await saveDatabase(db);
 
     res.json({ message: 'Password changed successfully.' });
   } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Failed to update password.' });
+    throw error;
   }
 });
 
@@ -499,11 +459,6 @@ apiRouter.put('/auth/change-password', authMiddleware, async (req: Authenticated
 apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, async (req, res: Response): Promise<void> => {
   const { email } = req.body;
   const GENERIC_MESSAGE = 'If an account exists with this email, a password reset link has been sent.';
-
-  if (!email || typeof email !== 'string') {
-    res.status(400).json({ error: 'Email address is required.' });
-    return;
-  }
 
   const db = await getDatabase();
   const user = db.users.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
@@ -527,14 +482,9 @@ apiRouter.post('/auth/forgot-password', forgotPasswordRateLimiter, async (req, r
 });
 
 // Reset Password
-apiRouter.post('/auth/reset-password', async (req, res: Response): Promise<void> => {
+apiRouter.post('/auth/reset-password', loginRateLimiter, async (req, res: Response): Promise<void> => {
   try {
     const { token, email, newPassword } = req.body;
-    if (!newPassword || newPassword.length < 8) {
-      res.status(400).json({ error: 'New password must be at least 8 characters.' });
-      return;
-    }
-
     const db = await getDatabase();
     const record = db.passwordResetTokens.find(
       (t) => t.token === token && (!email || t.email.toLowerCase() === email.toLowerCase())
@@ -551,15 +501,14 @@ apiRouter.post('/auth/reset-password', async (req, res: Response): Promise<void>
       return;
     }
 
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = await hashPassword(newPassword);
     // Remove consumed token
     db.passwordResetTokens = db.passwordResetTokens.filter((t) => t.token !== token);
     await saveDatabase(db);
 
     res.json({ message: 'Password has been successfully reset. You can now sign in.' });
   } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).json({ error: 'Failed to reset password.' });
+    throw error;
   }
 });
 
@@ -752,8 +701,8 @@ apiRouter.post('/user/progress', authMiddleware, async (req: AuthenticatedReques
   // Validate inputs — no fake fallbacks. Weight is required and must be sane;
   // the rest are optional but rejected if present and out of range.
   const weight = Number(weightKg);
-  if (!Number.isFinite(weight) || weight < 20 || weight > 400) {
-    res.status(400).json({ error: 'Weight (kg) is required and must be between 20 and 400.' });
+  if (!Number.isFinite(weight) || weight < 20 || weight > 300) {
+    res.status(400).json({ error: 'Weight (kg) is required and must be between 20 and 300.' });
     return;
   }
 
@@ -1467,9 +1416,9 @@ apiRouter.post(
         return;
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await hashPassword(password);
       const newUser: User = {
-        id: `user_${Date.now()}`,
+        id: `user_${crypto.randomUUID()}`,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
@@ -1489,8 +1438,7 @@ apiRouter.post(
       await saveDatabase(db);
       res.status(201).json({ message: 'User created successfully!', user: sanitizeUser(newUser) });
     } catch (error) {
-      console.error('Create user error:', error);
-      res.status(500).json({ error: 'Failed to create user.' });
+      throw error;
     }
   }
 );
@@ -1611,7 +1559,7 @@ apiRouter.post(
         return;
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await hashPassword(password);
       const userId = `user_trainer_${Date.now()}`;
 
       const newTrainerUser: User = {
@@ -1649,8 +1597,7 @@ apiRouter.post(
 
       res.status(201).json({ message: 'Trainer created successfully!', trainer: newTrainerInfo });
     } catch (error) {
-      console.error('Add trainer error:', error);
-      res.status(500).json({ error: 'Failed to add trainer.' });
+      throw error;
     }
   }
 );
@@ -1682,6 +1629,7 @@ apiRouter.put(
     const user = db.users.find((u) => u.id === trainer.userId);
     if (user) {
       if (name) user.name = name.trim();
+      if (phone !== undefined) user.phone = phone;
       if (status) user.status = status;
     }
 
@@ -1776,3 +1724,5 @@ apiRouter.get(
 
 apiRouter.use(nutritionRouter);
 apiRouter.use(healthRouter);
+
+apiRouter.use(publicErrorHandler);

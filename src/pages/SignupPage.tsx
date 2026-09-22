@@ -1,3 +1,5 @@
+import { ValidationInput, ValidationSelect, useFormValidation } from '../components/ValidationInput';
+import { emailError, nameError, phoneError, passwordError, confirmPasswordError, dateOfBirthError, choiceError, FITNESS_GOALS as VALID_GOALS, GENDERS, normalizeEmail, normalizePhone } from '../lib/validation';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Lock, Mail, User, Phone, Calendar, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
@@ -29,6 +31,8 @@ export const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const validation = useFormValidation({ name: nameError(fullName), email: emailError(email), phone: phoneError(phone), password: passwordError(password), confirmPassword: confirmPasswordError(password, confirmPassword), dateOfBirth: dateOfBirthError(dateOfBirth), gender: choiceError(gender, GENDERS, 'gender option'), fitnessGoal: choiceError(fitnessGoal, VALID_GOALS, 'fitness goal'), agreeTerms: agreeTerms ? undefined : 'Please accept the Terms of Service.' });
+
   // If already logged in, redirect
   React.useEffect(() => {
     if (user) {
@@ -40,48 +44,26 @@ export const SignupPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!fullName.trim()) {
-      setError('Please provide your full legal or preferred name.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please provide a valid email address.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match. Please recheck.');
-      return;
-    }
-
-    if (!agreeTerms) {
-      setError('You must accept the IronCore Athletic Terms & Conditions to register.');
-      return;
-    }
+    if (loading || !validation.validate()) return;
 
     setLoading(true);
     try {
       // Register always auto-assigns USER role securely on backend
       await register({
-        name: fullName,
-        email,
-        phone,
+        name: fullName.trim(),
+        email: normalizeEmail(email),
+        phone: normalizePhone(phone),
         password,
         confirmPassword,
         dateOfBirth,
         gender,
         fitnessGoal,
+        agreeTerms,
       });
 
       navigate('/dashboard');
     } catch (err: unknown) {
+      validation.server(err);
       const msg = err instanceof Error ? err.message : 'Registration failed. Please try again.';
       setError(msg);
     } finally {
@@ -167,7 +149,7 @@ export const SignupPage: React.FC = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form noValidate onSubmit={handleSubmit} className="space-y-4">
               
               {/* Full Name */}
               <div>
@@ -178,14 +160,14 @@ export const SignupPage: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                     <User className="w-4 h-4" />
                   </div>
-                  <input
+                  <ValidationInput {...validation.field('name', 'Full name')}
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jordan Reed"
                     className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                  />
+                  maxLength={100} autoComplete="name" />
                 </div>
               </div>
 
@@ -199,14 +181,14 @@ export const SignupPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Mail className="w-4 h-4" />
                     </div>
-                    <input
+                    <ValidationInput {...validation.field('email', 'Email address')}
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="jordan@example.com"
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                    />
+                    maxLength={254} autoComplete="email" />
                   </div>
                 </div>
 
@@ -218,13 +200,13 @@ export const SignupPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Phone className="w-4 h-4" />
                     </div>
-                    <input
+                    <ValidationInput {...validation.field('phone', 'Phone number')}
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+1 (555) 000-0000"
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                    />
+                    maxLength={32} autoComplete="tel" />
                   </div>
                 </div>
               </div>
@@ -239,12 +221,12 @@ export const SignupPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Calendar className="w-4 h-4" />
                     </div>
-                    <input
+                    <ValidationInput {...validation.field('dateOfBirth', 'Date of birth')}
                       type="date"
                       value={dateOfBirth}
                       onChange={(e) => setDateOfBirth(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                    />
+                    min="1900-01-01" max={new Date().toISOString().slice(0, 10)} />
                   </div>
                 </div>
 
@@ -252,7 +234,7 @@ export const SignupPage: React.FC = () => {
                   <label className="block text-xs font-bold text-[#080512] uppercase tracking-wider mb-1.5">
                     Gender (Optional)
                   </label>
-                  <select
+                  <ValidationSelect {...validation.field('gender', 'gender')}
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                     className="w-full px-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
@@ -261,7 +243,7 @@ export const SignupPage: React.FC = () => {
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Non-binary">Non-binary</option>
-                  </select>
+                  </ValidationSelect>
                 </div>
               </div>
 
@@ -298,14 +280,14 @@ export const SignupPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Lock className="w-4 h-4" />
                     </div>
-                    <input
+                    <ValidationInput {...validation.field('password', 'Password')}
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Min 8 chars"
                       className="w-full pl-10 pr-10 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                    />
+                    maxLength={256} autoComplete="new-password" />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -324,14 +306,14 @@ export const SignupPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                       <Lock className="w-4 h-4" />
                     </div>
-                    <input
+                    <ValidationInput {...validation.field('confirmPassword', 'Confirm password')}
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repeat password"
                       className="w-full pl-10 pr-4 py-3 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                    />
+                    maxLength={256} autoComplete="new-password" />
                   </div>
                 </div>
               </div>
@@ -352,6 +334,8 @@ export const SignupPage: React.FC = () => {
                 </label>
               </div>
 
+              {validation.error('agreeTerms') && <p role="status" className="text-xs text-red-700">{validation.error('agreeTerms')}</p>}
+              <p className="text-xs text-neutral-500">Use 8?128 characters with uppercase, lowercase, a number and a special character. International phone numbers need a +country code; unprefixed numbers use Indian mobile rules.</p>
               {/* Submit Button */}
               <button
                 type="submit"

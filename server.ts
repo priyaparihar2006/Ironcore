@@ -1,3 +1,5 @@
+import { verifyWeightNotation } from './server/inputValidation.js';
+import { publicErrorHandler } from './server/httpErrors.js';
 import 'dotenv/config';
 import express, { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -30,7 +32,7 @@ function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+    console.log(`${new Date().toISOString()} ${req.method} ${req.path} ${res.statusCode} ${duration}ms`);
   });
   next();
 }
@@ -42,21 +44,7 @@ function requestLogger(req: Request, res: Response, next: NextFunction): void {
 // request bodies, so passwords/tokens/secrets can't end up in logs this way).
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function globalErrorHandler(err: unknown, req: Request, res: Response, _next: NextFunction): void {
-  const error = err instanceof Error ? err : new Error(String(err));
-  console.error(`[error] ${req.method} ${req.originalUrl}:`, error.message);
-  if (!isProduction && error.stack) {
-    console.error(error.stack);
-  }
-
-  if (res.headersSent) return;
-
-  const status = (err as { status?: number; statusCode?: number })?.status
-    || (err as { statusCode?: number })?.statusCode
-    || 500;
-
-  res.status(status).json({
-    error: status >= 500 ? 'Internal server error. Please try again.' : error.message,
-  });
+  publicErrorHandler(err, req, res, _next);
 }
 
 async function startServer() {
@@ -113,7 +101,7 @@ async function startServer() {
   });
 
   // Body parsing middleware
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '10mb', verify: verifyWeightNotation }));
   app.use(express.urlencoded({ extended: true }));
 
   // API routes mounted FIRST

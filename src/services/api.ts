@@ -77,15 +77,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (!res.ok) {
+    let fields: Record<string, string> | undefined;
     let message = `Request failed (${res.status})`;
     try {
       const body = await res.json();
       // api.ts / auth.ts always use `error`
       message = body.error || message;
+      fields = body.fields;
     } catch {
       // not JSON
     }
-    throw new Error(message);
+    throw Object.assign(new Error(message), { fields });
   }
 
   if (res.status === 204) return undefined as T;
@@ -103,7 +105,8 @@ export const api = {
     name: string;
     email: string;
     password: string;
-    confirmPassword?: string;
+    confirmPassword: string;
+    agreeTerms: boolean;
     phone?: string;
     dateOfBirth?: string;
     gender?: string;

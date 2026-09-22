@@ -1,3 +1,5 @@
+import { ValidationInput, ValidationSelect, useFormValidation } from '../../components/ValidationInput';
+import { emailError, nameError, passwordError, choiceError } from '../../lib/validation';
 import React, { useEffect, useState } from 'react';
 import { Users, Search, UserPlus, Trash2, Edit2, Shield, X, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -27,6 +29,9 @@ export const AdminUsersPage: React.FC = () => {
   const [creating, setCreating] = useState(false);
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
 
+  const [formError, setFormError] = useState('');
+  const validation = useFormValidation({ name: nameError(name), email: editingUser ? undefined : emailError(email), password: editingUser ? undefined : passwordError(password), role: choiceError(role, ['USER', 'TRAINER', 'ADMIN'], 'role') });
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -45,6 +50,8 @@ export const AdminUsersPage: React.FC = () => {
 
   const handleCreateOrUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+    if (creating || !validation.validate()) return;
     setCreating(true);
 
     try {
@@ -68,7 +75,8 @@ export const AdminUsersPage: React.FC = () => {
       setRole('USER');
       await fetchUsers();
     } catch (err) {
-      console.error(err);
+      validation.server(err);
+      setFormError(err instanceof Error ? err.message : 'Unable to save this account.');
     } finally {
       setCreating(false);
     }
@@ -126,7 +134,7 @@ export const AdminUsersPage: React.FC = () => {
             setEmail('');
             setPassword('');
             setRole('USER');
-            setShowModal(true);
+            validation.reset(); setFormError(''); setShowModal(true);
           }}
           className="px-5 py-3 rounded-2xl bg-[#080512] text-white text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-lg shadow-purple-950/5"
         >
@@ -224,7 +232,7 @@ export const AdminUsersPage: React.FC = () => {
                             setName(u.name);
                             setEmail(u.email);
                             setRole(u.role);
-                            setShowModal(true);
+                            validation.reset(); setFormError(''); setShowModal(true);
                           }}
                           className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-[#080512]"
                         >
@@ -259,22 +267,23 @@ export const AdminUsersPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateOrUpdate} className="space-y-4">
+            {formError && <p role="alert" className="text-sm text-red-700 mb-3">{formError}</p>}
+            <form noValidate onSubmit={handleCreateOrUpdate} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#080512] mb-1">Full Name *</label>
-                <input
+                <ValidationInput {...validation.field('name', 'Full name')}
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Taylor Vance"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
-                />
+                maxLength={100} />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#080512] mb-1">Email Address *</label>
-                <input
+                <ValidationInput {...validation.field('email', 'Email address')}
                   type="email"
                   required
                   disabled={!!editingUser}
@@ -282,26 +291,26 @@ export const AdminUsersPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="taylor@ironcore.fit"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium disabled:bg-neutral-100 disabled:text-neutral-400"
-                />
+                maxLength={254} autoComplete="email" />
               </div>
 
               {!editingUser && (
                 <div>
                   <label className="block text-xs font-bold text-[#080512] mb-1">Initial Password *</label>
-                  <input
+                  <ValidationInput {...validation.field('password', 'Password')}
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
-                  />
+                  maxLength={256} autoComplete="new-password" />
                 </div>
               )}
 
               <div>
                 <label className="block text-xs font-bold text-[#080512] mb-1">Role Assignment *</label>
-                <select
+                <ValidationSelect {...validation.field('role', 'role')}
                   value={role}
                   onChange={(e) => setRole(e.target.value as UserRole)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
@@ -309,7 +318,7 @@ export const AdminUsersPage: React.FC = () => {
                   <option value="USER">USER (Standard Athlete)</option>
                   <option value="TRAINER">TRAINER (Coach Portal Access)</option>
                   <option value="ADMIN">ADMIN (Full Governance)</option>
-                </select>
+                </ValidationSelect>
               </div>
 
               <button

@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../components/ValidationInput';
+import { emailError, normalizeEmail } from '../lib/validation';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
@@ -8,32 +10,29 @@ export const ForgotPasswordPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [demoResetUrl, setDemoResetUrl] = useState<string | null>(null);
+
+  const validation = useFormValidation({ email: emailError(email) });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
+    if (loading || !validation.validate()) return;
 
     setLoading(true);
     try {
-      const res = await apiRequest<{ message: string; token: string | null; resetUrl?: string }>(
+      await apiRequest<{ message: string }>(
         '/auth/forgot-password',
         {
           method: 'POST',
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email: normalizeEmail(email) }),
         }
       );
 
       setSubmitted(true);
-      if (res.resetUrl) {
-        setDemoResetUrl(res.resetUrl);
-      }
+
     } catch (err: unknown) {
+      validation.server(err);
       const msg = err instanceof Error ? err.message : 'Unable to dispatch reset email.';
       setError(msg);
     } finally {
@@ -76,17 +75,6 @@ export const ForgotPasswordPage: React.FC = () => {
               </p>
             </div>
 
-            {demoResetUrl && (
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200">
-                <div className="text-xs font-bold text-neutral-700 mb-1">Testing / Demo Reset Link:</div>
-                <Link
-                  to={demoResetUrl}
-                  className="text-xs text-purple-700 font-bold hover:underline break-all block"
-                >
-                  Click here to proceed to Password Reset page →
-                </Link>
-              </div>
-            )}
 
             <Link
               to="/login"
@@ -97,7 +85,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form noValidate onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-bold text-[#080512] uppercase tracking-wider mb-2">
                 Email Address
@@ -106,14 +94,14 @@ export const ForgotPasswordPage: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                   <Mail className="w-5 h-5" />
                 </div>
-                <input
+                <ValidationInput {...validation.field('email', 'Email address')}
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white"
-                />
+                maxLength={254} autoComplete="email" />
               </div>
             </div>
 

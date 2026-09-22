@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 import { test, after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
@@ -32,13 +34,14 @@ const preferences: HealthPreferences = {
   budget: 'medium',
   aiConsent: true,
 };
+let fixturePasswordHash: string;
 const fixture = (): DatabaseSchema => ({
   users: [
     {
       id: 'member1',
       name: 'First Member',
       email: 'first@example.test',
-      passwordHash: 'test',
+      passwordHash: fixturePasswordHash,
       role: 'USER',
       status: 'ACTIVE',
       joinedDate: '2026-01-01',
@@ -47,7 +50,7 @@ const fixture = (): DatabaseSchema => ({
       id: 'member2',
       name: 'Second Member',
       email: 'second@example.test',
-      passwordHash: 'test',
+      passwordHash: fixturePasswordHash,
       role: 'USER',
       status: 'ACTIVE',
       joinedDate: '2026-01-01',
@@ -76,6 +79,7 @@ let providerPayload: unknown;
 const capturedInputs: string[] = [];
 
 before(async () => {
+  fixturePasswordHash = await bcrypt.hash(randomBytes(24).toString('hex'), 10);
   database = new PGlite();
   await database.waitReady;
   // PGlite is a real embedded PostgreSQL engine with one connection. Serialize
@@ -86,7 +90,7 @@ before(async () => {
       sqlFailure = false;
       throw new Error('simulated disk failure');
     }
-    if (sql.includes('CREATE TABLE')) {
+    if (sql.includes('CREATE TABLE') || sql.includes('DO $$')) {
       const r = await database.exec(sql);
       return r.at(-1)!;
     }

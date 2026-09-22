@@ -1,3 +1,5 @@
+import { ValidationInput, ValidationSelect, useFormValidation } from '../../components/ValidationInput';
+import { nameError, phoneError, passwordError, confirmPasswordError, weightError, numberError, choiceError, FITNESS_GOALS as VALID_GOALS, GENDERS, normalizePhone } from '../../lib/validation';
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Phone, Lock, Save, AlertCircle, CheckCircle2, Shield, Target, Pencil, Camera, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -75,49 +77,19 @@ export const UserProfilePage: React.FC = () => {
     setMuscleMassPercent(profile?.muscleMass !== undefined ? String(profile.muscleMass) : '');
   }, [user, profile]);
 
-  // Validates a required numeric field within [min, max]; returns the
-  // parsed number, or null (after setting a friendly error message) if the
-  // field is missing or out of range. Never falls back to a fake default.
-  const validateRequiredNumber = (raw: string, label: string, min: number, max: number): number | null => {
-    const value = Number(raw);
-    if (raw.trim() === '' || !Number.isFinite(value) || value < min || value > max) {
-      setProfileMsg({ type: 'error', text: `${label} is required and must be between ${min} and ${max}.` });
-      return null;
-    }
-    return value;
-  };
-
-  // Optional numeric field: blank is valid (means "not provided"); a
-  // non-blank value must still be within [min, max].
-  const validateOptionalNumber = (raw: string, label: string, min: number, max: number): number | null | 'invalid' => {
-    if (raw.trim() === '') return null;
-    const value = Number(raw);
-    if (!Number.isFinite(value) || value < min || value > max) {
-      setProfileMsg({ type: 'error', text: `${label} must be between ${min} and ${max}.` });
-      return 'invalid';
-    }
-    return value;
-  };
+  const profileValidation = useFormValidation({ name: nameError(name), phone: phoneError(phone), gender: choiceError(gender, GENDERS, 'gender option'), fitnessGoal: choiceError(fitnessGoal, VALID_GOALS, 'fitness goal'), height: numberError(heightCm, 'Height', 100, 250, 1, true), currentWeight: weightError(currentWeight), targetWeight: weightError(targetWeight), bodyFatPercentage: numberError(bodyFatPercent, 'Body fat %', 0, 100, 1), muscleMass: numberError(muscleMassPercent, 'Muscle mass %', 0, 100, 1) });
+  const passwordValidation = useFormValidation({ currentPassword: passwordError(currentPassword, false), newPassword: passwordError(newPassword), confirmPassword: confirmPasswordError(newPassword, confirmPassword) });
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileMsg(null);
+    if (savingProfile || !profileValidation.validate()) return;
 
-    if (!fitnessGoal) {
-      setProfileMsg({ type: 'error', text: 'Please select your primary fitness goal.' });
-      return;
-    }
-
-    const height = validateRequiredNumber(heightCm, 'Height', 100, 250);
-    if (height === null) return;
-    const weight = validateRequiredNumber(currentWeight, 'Current weight', 20, 300);
-    if (weight === null) return;
-    const target = validateRequiredNumber(targetWeight, 'Target weight', 20, 300);
-    if (target === null) return;
-    const bodyFat = validateOptionalNumber(bodyFatPercent, 'Body fat %', 0, 100);
-    if (bodyFat === 'invalid') return;
-    const muscleMass = validateOptionalNumber(muscleMassPercent, 'Muscle mass %', 0, 100);
-    if (muscleMass === 'invalid') return;
+    const height = Number(heightCm);
+    const weight = Number(currentWeight);
+    const target = Number(targetWeight);
+    const bodyFat = bodyFatPercent.trim() ? Number(bodyFatPercent) : null;
+    const muscleMass = muscleMassPercent.trim() ? Number(muscleMassPercent) : null;
 
     setSavingProfile(true);
 
@@ -125,8 +97,8 @@ export const UserProfilePage: React.FC = () => {
       await apiRequest('/auth/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name,
-          phone,
+          name: name.trim(),
+          phone: normalizePhone(phone),
           gender,
           fitnessGoal,
           height,
@@ -141,6 +113,7 @@ export const UserProfilePage: React.FC = () => {
       setProfileMsg({ type: 'success', text: 'Athlete profile and biometrics successfully updated.' });
       setTimeout(() => setProfileMsg(null), 4000);
     } catch (err: unknown) {
+      profileValidation.server(err);
       setProfileMsg({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save profile.' });
     } finally {
       setSavingProfile(false);
@@ -199,21 +172,13 @@ export const UserProfilePage: React.FC = () => {
     e.preventDefault();
     setPasswordMsg(null);
 
-    if (newPassword.length < 8) {
-      setPasswordMsg({ type: 'error', text: 'New password must be at least 8 characters long.' });
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg({ type: 'error', text: 'New passwords do not match.' });
-      return;
-    }
+    if (passwordLoading || !passwordValidation.validate()) return;
 
     setPasswordLoading(true);
     try {
       await apiRequest('/auth/change-password', {
         method: 'PUT',
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       });
 
       setPasswordMsg({ type: 'success', text: 'Password successfully updated!' });
@@ -222,6 +187,7 @@ export const UserProfilePage: React.FC = () => {
       setConfirmPassword('');
       setTimeout(() => setPasswordMsg(null), 4000);
     } catch (err: unknown) {
+      passwordValidation.server(err);
       setPasswordMsg({
         type: 'error',
         text: err instanceof Error ? err.message : 'Failed to change password.',
@@ -253,7 +219,7 @@ export const UserProfilePage: React.FC = () => {
       )}
 
       {/* Main Profile Form */}
-      <form onSubmit={handleSaveProfile} className="space-y-8">
+      <form noValidate onSubmit={handleSaveProfile} className="space-y-8">
         
         {/* Section 1: Identity & Avatar */}
         <div className="bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm space-y-6">
@@ -371,13 +337,13 @@ export const UserProfilePage: React.FC = () => {
               <label className="block text-xs font-bold text-[#080512] mb-1">Full Legal Name</label>
               <div className="relative">
                 <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
-                <input
+                <ValidationInput {...profileValidation.field('name', 'Full name')}
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
-                />
+                maxLength={100} autoComplete="name" />
               </div>
             </div>
 
@@ -398,18 +364,18 @@ export const UserProfilePage: React.FC = () => {
               <label className="block text-xs font-bold text-[#080512] mb-1">Phone Number</label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
-                <input
+                <ValidationInput {...profileValidation.field('phone', 'Phone number')}
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
-                />
+                maxLength={32} autoComplete="tel" />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-[#080512] mb-1">Gender</label>
-              <select
+              <ValidationSelect {...profileValidation.field('gender', 'gender')}
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
@@ -418,13 +384,13 @@ export const UserProfilePage: React.FC = () => {
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Non-binary">Non-binary</option>
-              </select>
+              </ValidationSelect>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-[#080512] mb-1">Primary Fitness Goal</label>
-            <select
+            <ValidationSelect {...profileValidation.field('fitnessGoal', 'fitnessGoal')}
               value={fitnessGoal}
               onChange={(e) => setFitnessGoal(e.target.value)}
               required
@@ -434,7 +400,7 @@ export const UserProfilePage: React.FC = () => {
               {FITNESS_GOALS.map((goal) => (
                 <option key={goal} value={goal}>{goal}</option>
               ))}
-            </select>
+            </ValidationSelect>
           </div>
         </div>
 
@@ -460,74 +426,60 @@ export const UserProfilePage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Height (cm)</label>
-              <input
-                type="number"
+              <ValidationInput {...profileValidation.field('height', 'Height (cm)')}
+                type="text"
                 required
-                min={100}
-                max={250}
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
                 placeholder="Enter height"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
-              />
+              inputMode="decimal" maxLength={8} />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Current Weight (kg)</label>
-              <input
-                type="number"
-                step="0.1"
+              <ValidationInput {...profileValidation.field('currentWeight', 'Current weight (kg)')}
+                type="text"
                 required
-                min={20}
-                max={300}
                 value={currentWeight}
                 onChange={(e) => setCurrentWeight(e.target.value)}
                 placeholder="Enter current weight"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-purple-900"
-              />
+              inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Target Weight (kg)</label>
-              <input
-                type="number"
-                step="0.1"
+              <ValidationInput {...profileValidation.field('targetWeight', 'Target weight (kg)')}
+                type="text"
                 required
-                min={20}
-                max={300}
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(e.target.value)}
                 placeholder="Enter target weight"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-emerald-700"
-              />
+              inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Body Fat %</label>
-              <input
-                type="number"
-                step="0.1"
-                min={0}
-                max={100}
+              <ValidationInput {...profileValidation.field('bodyFatPercentage', 'Body fat %')}
+                type="text"
                 value={bodyFatPercent}
                 onChange={(e) => setBodyFatPercent(e.target.value)}
                 placeholder="Optional"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
-              />
+              inputMode="decimal" maxLength={8} />
             </div>
 
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-[11px] font-bold text-neutral-500 uppercase mb-1">Muscle Mass %</label>
-              <input
-                type="number"
-                step="0.1"
-                min={0}
-                max={100}
+              <ValidationInput {...profileValidation.field('muscleMass', 'Muscle mass %')}
+                type="text"
                 value={muscleMassPercent}
                 onChange={(e) => setMuscleMassPercent(e.target.value)}
                 placeholder="Optional"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
-              />
+              inputMode="decimal" maxLength={8} />
             </div>
           </div>
 
@@ -559,41 +511,41 @@ export const UserProfilePage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
+        <form noValidate onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
           <div>
             <label className="block text-xs font-bold text-[#080512] mb-1">Current Password</label>
-            <input
+            <ValidationInput {...passwordValidation.field('currentPassword', 'Current password')}
               type="password"
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
-            />
+            maxLength={4096} autoComplete="current-password" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[#080512] mb-1">New Password</label>
-              <input
+              <ValidationInput {...passwordValidation.field('newPassword', 'New password')}
                 type="password"
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Min. 8 characters"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
-              />
+              maxLength={256} autoComplete="new-password" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#080512] mb-1">Confirm New Password</label>
-              <input
+              <ValidationInput {...passwordValidation.field('confirmPassword', 'Confirm new password')}
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat new password"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
-              />
+              maxLength={256} autoComplete="new-password" />
             </div>
           </div>
 

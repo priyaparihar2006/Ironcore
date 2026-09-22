@@ -42,7 +42,7 @@ export async function apiRequest<T = unknown>(
 
   if (!response.ok) {
     const errorMsg = data?.error || `Request failed with status ${response.status}`;
-    throw new Error(errorMsg);
+    throw Object.assign(new Error(errorMsg), { fields: data?.fields });
   }
 
   return data as T;

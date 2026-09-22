@@ -1,3 +1,4 @@
+import { VALIDATION_SCHEMA_SQL } from './validationSchema.js';
 import { Pool, type PoolClient } from 'pg';
 import type {
   DatabaseSchema,
@@ -320,6 +321,7 @@ export async function ensureSchema(): Promise<void> {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock(73180423)');
     await client.query(SCHEMA_SQL);
+    await client.query(VALIDATION_SCHEMA_SQL);
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');

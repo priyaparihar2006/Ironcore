@@ -1,3 +1,5 @@
+import { verifyWeightNotation } from '../server/inputValidation.js';
+import { publicErrorHandler } from '../server/httpErrors.js';
 import express from 'express';
 import helmet from 'helmet';
 import { apiRouter } from '../server/api.js';
@@ -35,18 +37,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb', verify: verifyWeightNotation }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', apiRouter);
 app.use('/', apiRouter);
 
-// Global Error Handler for Vercel Serverless Function
-app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('[Vercel API Error]', err?.code || 'request_failed');
-  if (res.headersSent) return;
-  const status = Number.isInteger(err?.status) && err.status >= 400 && err.status < 500 ? err.status : 500;
-  res.status(status).json({ error: status < 500 ? err.message : 'Service unavailable. Please try again.' });
-});
+app.use(publicErrorHandler);
 
 export default app;

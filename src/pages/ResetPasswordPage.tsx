@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../components/ValidationInput';
+import { passwordError, confirmPasswordError } from '../lib/validation';
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
@@ -16,6 +18,8 @@ export const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const validation = useFormValidation({ newPassword: passwordError(newPassword), confirmPassword: confirmPasswordError(newPassword, confirmPassword) });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -25,21 +29,13 @@ export const ResetPasswordPage: React.FC = () => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+    if (loading || !validation.validate()) return;
 
     setLoading(true);
     try {
       await apiRequest('/auth/reset-password', {
         method: 'POST',
-        body: JSON.stringify({ token, email, newPassword }),
+        body: JSON.stringify({ token, email, newPassword, confirmPassword }),
       });
 
       setSuccess(true);
@@ -47,6 +43,7 @@ export const ResetPasswordPage: React.FC = () => {
         navigate('/login');
       }, 2000);
     } catch (err: unknown) {
+      validation.server(err);
       const msg = err instanceof Error ? err.message : 'Failed to reset password.';
       setError(msg);
     } finally {
@@ -86,7 +83,7 @@ export const ResetPasswordPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-[#080512] uppercase tracking-wider mb-1.5">
                 New Password
@@ -95,14 +92,14 @@ export const ResetPasswordPage: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                   <Lock className="w-4 h-4" />
                 </div>
-                <input
+                <ValidationInput {...validation.field('newPassword', 'New password')}
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min. 8 characters"
                   className="w-full pl-10 pr-10 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white"
-                />
+                maxLength={256} autoComplete="new-password" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -121,14 +118,14 @@ export const ResetPasswordPage: React.FC = () => {
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
                   <Lock className="w-4 h-4" />
                 </div>
-                <input
+                <ValidationInput {...validation.field('confirmPassword', 'Confirm password')}
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat new password"
                   className="w-full pl-10 pr-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white"
-                />
+                maxLength={256} autoComplete="new-password" />
               </div>
             </div>
 

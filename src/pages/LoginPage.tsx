@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../components/ValidationInput';
+import { emailError, passwordError, normalizeEmail } from '../lib/validation';
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Lock, Mail, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -16,6 +18,8 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
+  const validation = useFormValidation({ email: emailError(email), password: passwordError(password, false) });
+
   // If already logged in, redirect
   React.useEffect(() => {
     if (user) {
@@ -29,25 +33,11 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    if (!password) {
-      setError('Please enter your password.');
-      return;
-    }
+    if (loading || !validation.validate()) return;
 
     setLoading(true);
     try {
-      const loggedUser = await login(email, password, rememberMe);
+      const loggedUser = await login(normalizeEmail(email), password, rememberMe);
       setSuccessToast(`Welcome back, ${loggedUser.name}!`);
 
       // Determine redirect path
@@ -66,17 +56,12 @@ export const LoginPage: React.FC = () => {
         }
       }, 500);
     } catch (err: unknown) {
+      validation.server(err);
       const msg = err instanceof Error ? err.message : 'Invalid credentials. Please try again.';
       setError(msg);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setError(null);
   };
 
   return (
@@ -171,7 +156,7 @@ export const LoginPage: React.FC = () => {
             )}
 
             {/* Sign In Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form noValidate onSubmit={handleSubmit} className="space-y-5">
               
               {/* Email Field */}
               <div>
@@ -182,14 +167,14 @@ export const LoginPage: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400">
                     <Mail className="w-5 h-5" />
                   </div>
-                  <input
+                  <ValidationInput {...validation.field('email', 'Email address')}
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                  />
+                  maxLength={254} autoComplete="email" />
                 </div>
               </div>
 
@@ -210,14 +195,14 @@ export const LoginPage: React.FC = () => {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-neutral-400">
                     <Lock className="w-5 h-5" />
                   </div>
-                  <input
+                  <ValidationInput {...validation.field('password', 'Password')}
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
                     className="w-full pl-11 pr-12 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white transition-all"
-                  />
+                  maxLength={4096} autoComplete="current-password" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -263,43 +248,6 @@ export const LoginPage: React.FC = () => {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Accounts Selection */}
-            <div className="mt-8 pt-6 border-t border-neutral-200/70">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                  1-Click Demo Accounts
-                </span>
-                <span className="text-[10px] text-neutral-400">Click to fill</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickFill('admin@ironcore.fit', 'AdminPassword123!')}
-                  className="px-2.5 py-2 rounded-xl text-left bg-purple-50 hover:bg-purple-100 border border-purple-200/70 transition-all text-xs"
-                >
-                  <div className="font-bold text-purple-900">Admin</div>
-                  <div className="text-[10px] text-purple-700 truncate">Alex Vance</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFill('marcus@ironcore.fit', 'TrainerPassword123!')}
-                  className="px-2.5 py-2 rounded-xl text-left bg-blue-50 hover:bg-blue-100 border border-blue-200/70 transition-all text-xs"
-                >
-                  <div className="font-bold text-blue-900">Trainer</div>
-                  <div className="text-[10px] text-blue-700 truncate">Coach Marcus</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickFill('jordan@ironcore.fit', 'UserPassword123!')}
-                  className="px-2.5 py-2 rounded-xl text-left bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 transition-all text-xs"
-                >
-                  <div className="font-bold text-emerald-900">Member</div>
-                  <div className="text-[10px] text-emerald-700 truncate">Jordan Reed</div>
-                </button>
-              </div>
-            </div>
 
             {/* Link to Sign Up */}
             <div className="mt-8 text-center text-sm text-neutral-600">

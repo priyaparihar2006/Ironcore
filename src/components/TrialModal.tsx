@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../components/ValidationInput';
+import { emailError, nameError, phoneError } from '../lib/validation';
 import React, { useState } from 'react';
 import { X, CheckCircle, Sparkles, ArrowRight, Shield, QrCode } from 'lucide-react';
 import { PricingPlan } from '../types';
@@ -17,10 +19,13 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
   const [fitnessGoal, setFitnessGoal] = useState('Strength & Muscle Gain');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  const validation = useFormValidation({ name: nameError(fullName), email: emailError(email), phone: phoneError(phone, true) });
+
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validation.validate()) return;
     setIsSubmitted(true);
   };
 
@@ -56,7 +61,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
               Experience the world-class facility, full biometric analytics, and training programs with zero commitment.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form noValidate onSubmit={handleSubmit} className="space-y-4">
               
               {/* Plan Picker */}
               <div>
@@ -87,14 +92,14 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                 <label className="block text-xs font-semibold text-neutral-700 mb-1">
                   Full Name
                 </label>
-                <input
+                <ValidationInput {...validation.field('name', 'Full name')}
                   type="text"
                   required
                   placeholder="e.g. Liam Vance"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
-                />
+                maxLength={100} autoComplete="name" />
               </div>
 
               {/* Email Address */}
@@ -102,14 +107,14 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                 <label className="block text-xs font-semibold text-neutral-700 mb-1">
                   Work / Personal Email
                 </label>
-                <input
+                <ValidationInput {...validation.field('email', 'Email address')}
                   type="email"
                   required
                   placeholder="e.g. liam@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
-                />
+                maxLength={254} autoComplete="email" />
               </div>
 
               {/* Phone Number */}
@@ -117,14 +122,14 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                 <label className="block text-xs font-semibold text-neutral-700 mb-1">
                   Phone Number (for SMS Door Pass)
                 </label>
-                <input
+                <ValidationInput {...validation.field('phone', 'Phone number')}
                   type="tel"
                   required
                   placeholder="e.g. +91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
-                />
+                maxLength={32} autoComplete="tel" />
               </div>
 
               {/* Primary Goal */}

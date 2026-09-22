@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../components/ValidationInput';
+import { emailError } from '../lib/validation';
 import React, { useState } from 'react';
 import { Dumbbell, ArrowRight, CheckCircle2, Instagram, Twitter, Youtube, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 
@@ -5,8 +7,11 @@ export const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
+  const validation = useFormValidation({ email: emailError(email) });
+
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validation.validate()) return;
     if (email.trim()) {
       setSubscribed(true);
       setEmail('');
@@ -84,16 +89,18 @@ export const Footer: React.FC = () => {
               Get weekly science-backed training protocols, nutrition breakdowns, and priority event access.
             </p>
 
-            <form onSubmit={handleSubscribe} className="space-y-2">
+            <form noValidate onSubmit={handleSubscribe} className="space-y-2">
               <div className="flex items-center gap-2">
-                <input
+                <div className="flex-1 min-w-0">
+                <ValidationInput {...validation.field('email', 'Email address')}
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
                   className="w-full px-4 py-2.5 rounded-full text-xs bg-neutral-50 border border-neutral-200 text-[#080512] placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
-                />
+                maxLength={254} autoComplete="email" />
+                </div>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-full bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors shrink-0"

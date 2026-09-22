@@ -1,3 +1,5 @@
+import { ValidationInput, useFormValidation } from '../../components/ValidationInput';
+import { weightError, numberError } from '../../lib/validation';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Scale,
@@ -74,7 +76,10 @@ export const UserProgressPage: React.FC = () => {
   const maxWeight = weights.length ? Math.max(...weights) : 0;
   const minWeight = weights.length ? Math.min(...weights) : 0;
 
+  const validation = useFormValidation({ weightKg: weightError(weightKg), caloriesBurned: numberError(caloriesBurned, 'Calories burned', 0, 20000), steps: numberError(steps, 'Steps', 0, 200000), strengthScore: numberError(strengthScore, 'Strength score', 0, 100), notes: notes.length > 2000 ? 'Notes must not exceed 2000 characters.' : undefined });
+
   const resetForm = () => {
+    validation.reset();
     setWeightKg('');
     setCaloriesBurned('');
     setSteps('');
@@ -87,26 +92,11 @@ export const UserProgressPage: React.FC = () => {
     e.preventDefault();
     setFormError(null);
 
-    const weight = parseFloat(weightKg);
-    if (!Number.isFinite(weight) || weight < 20 || weight > 400) {
-      setFormError('Enter a weight between 20 and 400 kg.');
-      return;
-    }
+    if (submitting || !validation.validate()) return;
+    const weight = weightKg.trim();
     const cals = caloriesBurned === '' ? 0 : Number(caloriesBurned);
-    if (!Number.isFinite(cals) || cals < 0 || cals > 20000) {
-      setFormError('Calories burned must be between 0 and 20000.');
-      return;
-    }
     const stepCount = steps === '' ? 0 : Number(steps);
-    if (!Number.isFinite(stepCount) || stepCount < 0 || stepCount > 200000) {
-      setFormError('Steps must be between 0 and 200000.');
-      return;
-    }
     const strength = strengthScore === '' ? 0 : Number(strengthScore);
-    if (!Number.isFinite(strength) || strength < 0 || strength > 100) {
-      setFormError('Strength score must be between 0 and 100.');
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -124,6 +114,7 @@ export const UserProgressPage: React.FC = () => {
       resetForm();
       await fetchProgress();
     } catch (err) {
+      validation.server(err);
       setFormError(err instanceof Error ? err.message : 'Could not save progress entry.');
     } finally {
       setSubmitting(false);
@@ -359,56 +350,53 @@ export const UserProgressPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddEntry} className="space-y-4">
+            <form noValidate onSubmit={handleAddEntry} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-[#080512] mb-1">Weight (kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
+                  <ValidationInput {...validation.field('weightKg', 'Weight (kg)')}
+                    type="text"
                     required
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
+                  inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#080512] mb-1">Calories Burned</label>
-                  <input
-                    type="number"
+                  <ValidationInput {...validation.field('caloriesBurned', 'Calories burned')}
+                    type="text"
                     value={caloriesBurned}
                     onChange={(e) => setCaloriesBurned(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
+                  inputMode="numeric" maxLength={6} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-[#080512] mb-1">Daily Steps</label>
-                  <input
-                    type="number"
+                  <ValidationInput {...validation.field('steps', 'Daily steps')}
+                    type="text"
                     value={steps}
                     onChange={(e) => setSteps(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
+                  inputMode="numeric" maxLength={7} />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#080512] mb-1">Strength Score (0-100)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
+                  <ValidationInput {...validation.field('strengthScore', 'Strength score')}
+                    type="text"
                     value={strengthScore}
                     onChange={(e) => setStrengthScore(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-sm font-bold focus:ring-2 focus:ring-[#080512]"
-                  />
+                  inputMode="numeric" maxLength={3} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#080512] mb-1">Notes / Reflection</label>
-                <textarea
+                <textarea maxLength={2000}
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
