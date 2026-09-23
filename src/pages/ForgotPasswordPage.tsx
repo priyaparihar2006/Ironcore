@@ -41,23 +41,23 @@ export const ForgotPasswordPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F7FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full mx-auto bg-white rounded-[32px] p-8 sm:p-10 border border-neutral-200/80 shadow-2xl shadow-purple-950/5">
+    <div className="min-h-screen bg-[var(--color-brand-bg)] flex flex-col justify-center py-12 px-4 md:px-8 lg:px-12">
+      <div className="max-w-md w-full mx-auto bg-white rounded-lg p-8 sm:p-10 border border-[var(--color-border-main)]/80 shadow-sm">
         
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-[var(--color-primary)]/20 text-[var(--color-text-main)] flex items-center justify-center mx-auto mb-4">
             <KeyRound className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black tracking-tight text-[#080512]">
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text-main)]">
             Reset Password
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-2">
+          <p className="text-xs sm:text-sm text-[var(--color-text-muted)] mt-2">
             Enter the email address tied to your IronCore profile and we'll send you recovery instructions.
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-3">
+          <div className="mb-6 p-6 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-3">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -65,7 +65,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
         {submitted ? (
           <div className="space-y-6">
-            <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm">
+            <div className="p-6 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm">
               <div className="flex items-center gap-2 font-bold mb-1">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 Reset Link Dispatched
@@ -78,7 +78,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
             <Link
               to="/login"
-              className="w-full py-3.5 rounded-2xl bg-[#080512] text-white font-bold text-sm flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] font-bold text-sm flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Sign In</span>
@@ -87,11 +87,11 @@ export const ForgotPasswordPage: React.FC = () => {
         ) : (
           <form noValidate onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-[#080512] uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-neutral-400">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--color-text-muted)]">
                   <Mail className="w-5 h-5" />
                 </div>
                 <ValidationInput {...validation.field('email', 'Email address')}
@@ -100,7 +100,7 @@ export const ForgotPasswordPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/50 text-[#080512] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#080512] focus:bg-white"
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-[var(--color-border-main)] shadow-sm bg-neutral-50/50 text-[var(--color-text-main)] placeholder-neutral-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
                 maxLength={254} autoComplete="email" />
               </div>
             </div>
@@ -108,7 +108,7 @@ export const ForgotPasswordPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 rounded-2xl bg-[#080512] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-800 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-800 transition-all cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <span>Sending...</span>
@@ -123,7 +123,7 @@ export const ForgotPasswordPage: React.FC = () => {
             <div className="text-center pt-2">
               <Link
                 to="/login"
-                className="text-xs font-bold text-neutral-500 hover:text-[#080512] transition-colors inline-flex items-center gap-1.5"
+                className="text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors inline-flex items-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Return to sign in

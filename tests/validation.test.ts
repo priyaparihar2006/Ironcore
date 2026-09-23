@@ -19,7 +19,7 @@ import {
 } from '../src/lib/validation.js';
 import { hashPassword, verifyPassword } from '../server/passwords.js';
 import { setPoolForTests, ensureSchema, persistAll, getPool } from '../server/postgres.js';
-import { getDatabase } from '../server/db.js';
+import { getDatabase, saveDatabase } from '../server/db.js';
 import { verifyWeightNotation } from '../server/inputValidation.js';
 import { publicErrorHandler } from '../server/httpErrors.js';
 import type { DatabaseSchema } from '../server/types.js';
@@ -157,6 +157,39 @@ const registration = () => {
     agreeTerms: true,
   };
 };
+
+test('workout assignment enforces trainer ownership and preserves admin access', async () => {
+  const snapshot = await getDatabase();
+  const trainer = {
+    ...snapshot.users.find((user) => user.id === 'member')!,
+    id: 'assignment-trainer',
+    email: 'assignment-trainer@example.com',
+    role: 'TRAINER' as const,
+  };
+  snapshot.users.push(trainer);
+  snapshot.workoutPlans.push({
+    id: 'assignment-plan', title: 'Test Workout', category: 'Strength',
+    level: 'Beginner', durationMinutes: 30, caloriesBurn: 100,
+    description: 'Test', exercises: [],
+  });
+  await saveDatabase(snapshot);
+  const { generateToken } = await import('../server/auth.js');
+  const trainerToken = generateToken(trainer);
+  const body = { clientId: 'member', workoutPlanId: 'assignment-plan', scheduledDate: '2026-09-23' };
+  const before = await getDatabase();
+  assert.equal((await request('/trainer/assign-workout', body, 'POST', trainerToken)).status, 403);
+  assert.equal((await request('/trainer/assign-workout', body, 'POST', memberToken)).status, 403);
+  const afterDenied = await getDatabase();
+  assert.deepEqual(afterDenied.workoutAssignments, before.workoutAssignments);
+  assert.deepEqual(afterDenied.notifications, before.notifications);
+  assert.equal((await request('/trainer/assign-workout', body, 'POST', adminToken)).status, 201);
+  const assigned = await getDatabase();
+  assigned.users.find((user) => user.id === 'member')!.assignedTrainerId = trainer.id;
+  await saveDatabase(assigned);
+  assert.equal((await request('/trainer/assign-workout', body, 'POST', trainerToken)).status, 201);
+  const saved = await getDatabase();
+  assert.equal(saved.workoutAssignments.length, before.workoutAssignments.length + 2);
+});
 
 test('weight validation covers requested boundaries, decimals and malformed types', () => {
   for (const value of [20, 65.5, 300, '20', '65.5', '300', ' 65.5 '])

@@ -5,8 +5,8 @@ import { apiRequest } from '../../lib/api';
 import type { NutritionData, MealEntry } from '../../types';
 import type { HealthDashboard, MealDraft } from '../../health';
 
-const input = 'w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm';
-const button = 'rounded-xl bg-[#080512] text-white px-4 py-3 text-sm font-bold disabled:opacity-40';
+const input = 'w-full rounded-xl border border-[var(--color-border-main)] bg-white p-3 text-sm';
+const button = 'rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] px-4 py-3 text-sm font-bold disabled:opacity-40';
 const blank = {
   type: 'Lunch',
   name: '',
@@ -162,12 +162,12 @@ export function UserNutritionPage() {
   const timezone = health?.state.preferences?.timezone || 'UTC';
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
+      <header className="flex flex-wrap items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black flex items-center gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
             <Apple /> Nutrition
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
             Log what you eat, review portions and build a clearer picture of your day.
           </p>
         </div>
@@ -176,7 +176,7 @@ export function UserNutritionPage() {
           Log a meal
         </button>
       </header>
-      <div className="flex flex-wrap gap-4 items-end">
+      <div className="flex flex-wrap gap-6 items-end">
         <label className="text-sm font-semibold">
           Your day
           <input
@@ -193,15 +193,15 @@ export function UserNutritionPage() {
             disabled={!!busy}
           />
         </label>
-        <p className="text-xs text-neutral-500 pb-3">
+        <p className="text-xs text-[var(--color-text-muted)] pb-3">
           {timezone} ?{' '}
-          <Link className="underline text-purple-700" to="/dashboard/health">
+          <Link className="underline text-[var(--color-text-main)]" to="/dashboard/health">
             Health preferences & targets
           </Link>
         </p>
       </div>
       {error && (
-        <div role="alert" className="rounded-2xl bg-red-50 text-red-800 p-4">
+        <div role="alert" className="rounded-lg bg-red-50 text-red-800 p-card">
           {error}{' '}
           <button
             className="underline"
@@ -216,7 +216,7 @@ export function UserNutritionPage() {
         </div>
       )}
       {notice && (
-        <p role="status" className="rounded-2xl bg-emerald-50 text-emerald-900 p-4">
+        <p role="status" className="rounded-lg bg-emerald-50 text-emerald-900 p-card">
           {notice}
         </p>
       )}
@@ -224,7 +224,7 @@ export function UserNutritionPage() {
       {nutrition && (
         <>
           {!nutrition.dailyCalorieTarget && (
-            <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="rounded-lg bg-amber-50 p-card text-sm text-amber-900">
               No personalized targets for this day. You can still log meals.{' '}
               <Link className="underline font-bold" to="/dashboard/health">
                 Review your health estimates
@@ -232,7 +232,7 @@ export function UserNutritionPage() {
               .
             </p>
           )}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               ['Calories', nutrition.consumedCalories, nutrition.dailyCalorieTarget, 'kcal'],
               ['Protein', nutrition.consumedProteinGrams, nutrition.proteinTargetGrams, 'g'],
@@ -241,13 +241,13 @@ export function UserNutritionPage() {
             ].map(([label, consumed, target, unit]) => (
               <article
                 key={String(label)}
-                className="bg-white rounded-3xl border border-neutral-200 p-5"
+                className="bg-white rounded-3xl border border-[var(--color-border-main)] p-card"
               >
-                <p className="text-xs uppercase font-bold text-neutral-500">{label}</p>
-                <p className="text-2xl font-black mt-2">
+                <p className="text-xs uppercase font-bold text-[var(--color-text-muted)]">{label}</p>
+                <p className="text-2xl font-bold mt-2">
                   {consumed} <span className="text-xs font-normal">{unit}</span>
                 </p>
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">
                   {Number(target) > 0 ? `of ${target} ${unit}` : 'Target not set'}
                 </p>
                 {Number(target) > 0 && (
@@ -268,10 +268,10 @@ export function UserNutritionPage() {
               Some entries have unknown macros or legacy provenance. These totals may be incomplete.
             </p>
           )}
-          <section className="bg-white rounded-3xl border border-neutral-200 p-6 space-y-4">
-            <h2 className="text-xl font-black">Meals for {date}</h2>
+          <section className="bg-white rounded-3xl border border-[var(--color-border-main)] p-card space-y-4">
+            <h2 className="text-xl font-bold">Meals for {date}</h2>
             {!nutrition.meals.length ? (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-[var(--color-text-muted)]">
                 No meals logged. An empty day does not mean you ate nothing.
               </p>
             ) : (
@@ -279,15 +279,15 @@ export function UserNutritionPage() {
                 {nutrition.meals.map((meal) => (
                   <article key={meal.id} className="py-4 flex flex-wrap justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase text-purple-700 font-bold">
+                      <p className="text-xs uppercase text-[var(--color-text-main)] font-bold">
                         {meal.type} ? {meal.time}
                       </p>
                       <h3 className="font-bold mt-1">{meal.name}</h3>
-                      <p className="text-sm text-neutral-500 mt-1">
+                      <p className="text-sm text-[var(--color-text-muted)] mt-1">
                         {meal.calories} kcal ? Protein {meal.proteinGrams} g ? Carbs{' '}
                         {meal.carbsGrams} g ? Fat {meal.fatsGrams} g
                       </p>
-                      <p className="text-xs text-neutral-400 mt-1">
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
                         {meal.source || 'Legacy manual entry'}
                         {meal.unknownMacros ? ' ? Some macros unknown' : ''}
                       </p>
@@ -340,8 +340,8 @@ export function UserNutritionPage() {
           </section>
         </>
       )}
-      <section className="bg-purple-50 rounded-3xl border border-purple-200 p-6 space-y-4">
-        <h2 className="text-xl font-black flex gap-2 items-center">
+      <section className="bg-[var(--color-brand-bg)] rounded-3xl border border-[var(--color-border-main)] p-card space-y-4">
+        <h2 className="text-xl font-bold flex gap-2 items-center">
           <Sparkles size={21} /> Describe your meal
         </h2>
         <p className="text-sm text-neutral-600">
@@ -388,20 +388,20 @@ export function UserNutritionPage() {
           {busy === 'estimate' ? 'Looking up your meal?' : 'Estimate meal'}
         </button>
         {draft?.status === 'needs_input' && (
-          <div className="bg-white rounded-xl p-4">
+          <div className="bg-white rounded-xl p-card">
             <h3 className="font-bold">A little more detail is needed</h3>
-            <ul className="list-disc pl-5 text-sm mt-2">
+            <ul className="list-disc pl-6 text-sm mt-2">
               {draft.questions.map((q) => (
                 <li key={q}>{q}</li>
               ))}
             </ul>
-            <p className="text-xs text-neutral-500 mt-2">
+            <p className="text-xs text-[var(--color-text-muted)] mt-2">
               Update your description above and estimate again.
             </p>
           </div>
         )}
         {draft?.status === 'ready' && (
-          <div className="space-y-4 bg-white rounded-2xl p-4">
+          <div className="space-y-4 bg-white rounded-lg p-card">
             <h3 className="font-bold">Review candidate food matches</h3>
             {portions.map((p, i) => (
               <div key={i} className="grid grid-cols-[1fr_90px] gap-3">
@@ -422,7 +422,7 @@ export function UserNutritionPage() {
                     href={draft.portions[i]?.source}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-purple-700 underline"
+                    className="text-[var(--color-text-main)] underline"
                   >
                     USDA source
                   </a>
@@ -456,7 +456,7 @@ export function UserNutritionPage() {
               Fat {draft.fatsGrams} g
             </p>
             {draft.assumptions.map((a) => (
-              <p className="text-xs text-neutral-500" key={a}>
+              <p className="text-xs text-[var(--color-text-muted)]" key={a}>
                 {a}
               </p>
             ))}
@@ -501,17 +501,17 @@ export function UserNutritionPage() {
       </section>
       {modal && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 p-4 flex items-center justify-center"
+          className="fixed inset-0 bg-black/50 z-50 p-card flex items-center justify-center"
           role="dialog"
           aria-modal="true"
           aria-labelledby="meal-title"
         >
           <form
             onSubmit={saveManual}
-            className="bg-white rounded-3xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl p-card w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex justify-between">
-              <h2 id="meal-title" className="text-xl font-black">
+              <h2 id="meal-title" className="text-xl font-bold">
                 {editId ? 'Edit meal' : 'Log a meal'}
               </h2>
               <button
@@ -523,7 +523,7 @@ export function UserNutritionPage() {
                 <X />
               </button>
             </div>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-[var(--color-text-muted)]">
               For {date}. Leave unknown macros blank; they will be marked incomplete.
             </p>
             <label className="block text-sm">

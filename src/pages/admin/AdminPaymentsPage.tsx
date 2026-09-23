@@ -17,22 +17,22 @@ export const AdminPaymentsPage: React.FC = () => {
   const totalCollected = payments.reduce((acc, p) => acc + p.amount, 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
             Payment Ledger & Billing Invoices
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Reconcile recurring athletic subscriptions, upgrade invoices, and payment gateway receipts.
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-neutral-200/80 shadow-sm flex items-center gap-4 self-start sm:self-center">
+        <div className="p-card rounded-lg bg-white border border-[var(--color-border-main)]/80 shadow-sm flex items-center gap-6 self-start sm:self-center">
           <div>
-            <span className="text-[10px] font-bold uppercase text-neutral-400 block">Total Processed</span>
-            <span className="text-xl font-black text-emerald-700">${totalCollected.toLocaleString()}</span>
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)] block">Total Processed</span>
+            <span className="text-xl font-bold text-emerald-700">${totalCollected.toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -42,37 +42,37 @@ export const AdminPaymentsPage: React.FC = () => {
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
         </div>
       ) : (
-        <div className="bg-white rounded-[32px] border border-neutral-200/80 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
-            <h2 className="text-lg font-black text-[#080512]">Recorded Transactions</h2>
-            <span className="text-xs font-bold text-neutral-400">{payments.length} Records</span>
+        <div className="bg-white rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm overflow-hidden">
+          <div className="p-card border-b border-neutral-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recorded Transactions</h2>
+            <span className="text-xs font-bold text-[var(--color-text-muted)]">{payments.length} Records</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-neutral-50/80 text-neutral-400 uppercase font-bold border-b border-neutral-100">
-                  <th className="py-3.5 px-6">Transaction ID</th>
-                  <th className="py-3.5 px-6">Tier Plan</th>
-                  <th className="py-3.5 px-6">Date</th>
-                  <th className="py-3.5 px-6">Amount</th>
-                  <th className="py-3.5 px-6">Payment Method</th>
-                  <th className="py-3.5 px-6">Status</th>
+                <tr className="bg-neutral-50/80 text-[var(--color-text-muted)] uppercase font-bold border-b border-neutral-100">
+                  <th className="py-4 px-6">Transaction ID</th>
+                  <th className="py-4 px-6">Tier Plan</th>
+                  <th className="py-4 px-6">Date</th>
+                  <th className="py-4 px-6">Amount</th>
+                  <th className="py-4 px-6">Payment Method</th>
+                  <th className="py-4 px-6">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {payments.map((p) => (
                   <tr key={p.id} className="hover:bg-neutral-50/50">
-                    <td className="py-4 px-6 font-mono text-neutral-500 font-bold">{p.id}</td>
-                    <td className="py-4 px-6 font-black text-[#080512]">{p.planName} Membership</td>
+                    <td className="py-4 px-6 font-mono text-[var(--color-text-muted)] font-bold">{p.id}</td>
+                    <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{p.planName} Membership</td>
                     <td className="py-4 px-6 text-neutral-600">{p.date}</td>
-                    <td className="py-4 px-6 font-black text-emerald-700 font-mono">${p.amount.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-neutral-600 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-neutral-400" />
+                    <td className="py-4 px-6 font-bold text-emerald-700 font-mono">${p.amount.toFixed(2)}</td>
+                    <td className="py-4 px-6 text-neutral-600 flex items-center gap-2">
+                      <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
                       <span>{p.paymentMethod}</span>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800">
                         {p.status}
                       </span>
                     </td>

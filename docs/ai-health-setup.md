@@ -4,10 +4,12 @@ The application now has a **Health & AI** dashboard at `/dashboard/health` and a
 
 ## Configure and run
 
+For the configured OpenRouter free model, see [the exact environment settings](ai-providers.md#requested-openrouter-model). `AI_OUTPUT_MODE=prompt_json` supports compatible chat models without strict structured-output support, with local schema validation before accepting results.
+
 1. Install dependencies with `npm install`.
 2. Keep the existing PostgreSQL `DATABASE_URL` and authentication settings. Back up the database before deployment. Run `npm run migrate:health` to apply the additive health schema and the unique member/day nutrition index. Application initialization also ensures this schema. The migration preserves existing rows and fails with a reconciliation message if legacy duplicate day logs exist; it does not silently delete or merge them.
-3. For AI features, copy the AI settings from `.env.example` into the server environment. Set `AI_ENABLED=true`, `AI_API_KEY`, `AI_MODEL`, and `FOOD_DATA_API_KEY`. The implemented provider is OpenAI, using the Responses API with strict JSON output and `store:false`. Select an account-supported model that supports this API and structured output. Keys must never use a `VITE_` prefix.
-4. Set `AI_INPUT_USD_PER_MILLION` and `AI_OUTPUT_USD_PER_MILLION` to the selected model's verified prices, and `AI_MONTHLY_BUDGET` to the application's dollar limit. Both prices and a positive budget are required before AI becomes available. Default request timeout is 25 seconds and default member quota is 20 AI requests per rolling 24 hours.
+3. For AI features, copy the AI settings from `.env.example` into the server environment. Set `AI_ENABLED=true`, `AI_MODEL`, the provider's `AI_API_KEY`, and `FOOD_DATA_API_KEY` for food lookup. Choose `AI_API_FORMAT=responses` or `chat_completions` and the provider's `AI_BASE_URL`. The default remains OpenAI Responses. Models must support strict JSON Schema output. Keys must never use a `VITE_` prefix. See [provider examples](ai-providers.md) for OpenRouter, Gemini compatibility and local models.
+4. Choose `AI_PRICING_MODE=paid` with explicit non-negative token rates (at least one positive) and a positive monthly budget, or `free` with both rates explicitly zero and a non-negative budget. Use the selected model's actual account pricing. Blank/invalid values disable AI. Free mode does not alter provider billing and still enforces daily quotas. Default timeout is 25 seconds and default member quota is 20 AI requests per rolling 24 hours.
 5. Have a qualified nutrition professional review the `wellness-v1` policy in `server/health/calculations.ts`. Set `HEALTH_POLICY_REVIEWED=true` only after that review. Until then, members can preview estimates, track meals and generate calculated reports; activating diet targets and generating diet plans is disabled. This flag does not certify the application or replace a clinical review.
 6. Run `npm run dev`, complete the existing fitness profile, then open **Health & AI**. Save preferences and consent, calculate estimates and accept targets when enabled. Use **Nutrition** to log or estimate meals.
 
@@ -34,7 +36,7 @@ AI usage reservations are persisted before a request. They conservatively reserv
 
 AI work is bounded and awaited in the HTTP request; there are no unawaited tasks or process-local scheduled jobs. Configure hosting timeouts for the AI call plus a batch of up to eight concurrent food lookups (or lower the timeout/portion limit to fit the host). A disconnected request may finish server-side; refresh before retrying. For larger plans and scheduling, add a durable queue before enabling those features.
 
-The provider receives meal descriptions, selected preferences or aggregate report metrics, not member names, emails, credentials or full medical records. `store:false` is a request setting, not a claim of zero provider retention. Review provider terms and applicable regional privacy obligations before processing real health data.
+The provider receives meal descriptions, selected preferences or aggregate report metrics, not member names, emails, credentials or full medical records. Responses requests include `store:false`; compatible Chat Completions requests do not assume support for that field. Neither guarantees zero provider retention. Review provider terms and applicable regional privacy obligations before processing real health data.
 
 ## Verification
 

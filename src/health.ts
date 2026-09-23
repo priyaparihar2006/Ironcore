@@ -105,6 +105,7 @@ export interface WellnessState {
   reports: ProgressReport[];
 }
 export interface HealthDashboard {
+  aiProviderHost?: string;
   state: WellnessState;
   estimate: HealthEstimate;
   activeTarget?: TargetVersion;

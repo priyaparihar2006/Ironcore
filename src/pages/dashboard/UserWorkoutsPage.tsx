@@ -51,28 +51,28 @@ export const UserWorkoutsPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
             My Workouts
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Access your assigned training regimens, track sets and load, and record completions.
           </p>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex bg-neutral-100 p-1.5 rounded-2xl self-start">
+        <div className="flex bg-neutral-100 p-2 rounded-lg self-start">
           {(['ALL', 'PENDING', 'COMPLETED'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 filter === tab
-                  ? 'bg-white text-[#080512] shadow-sm'
-                  : 'text-neutral-500 hover:text-[#080512]'
+                  ? 'bg-white text-[var(--color-text-main)] shadow-sm'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
               }`}
             >
               {tab === 'ALL' ? 'All Routines' : tab === 'PENDING' ? 'Active / Upcoming' : 'Completed'}
@@ -88,7 +88,7 @@ export const UserWorkoutsPage: React.FC = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="p-8 rounded-3xl bg-red-50 border border-red-200 text-red-700 flex flex-col items-center text-center">
+        <div className="p-card rounded-3xl bg-red-50 border border-red-200 text-red-700 flex flex-col items-center text-center">
           <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
           <h2 className="text-lg font-bold">Error loading workouts</h2>
           <p className="text-sm text-red-600 mb-4">{error}</p>
@@ -100,10 +100,10 @@ export const UserWorkoutsPage: React.FC = () => {
           </button>
         </div>
       ) : filteredWorkouts.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white border border-neutral-200 text-center">
+        <div className="p-12 rounded-3xl bg-white border border-[var(--color-border-main)] text-center">
           <Dumbbell className="w-12 h-12 mx-auto text-neutral-300 mb-3" />
-          <h3 className="text-lg font-bold text-neutral-800">No workouts assigned yet</h3>
-          <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1">
+          <h3 className="text-lg font-bold text-[var(--color-text-main)]">No workouts assigned yet</h3>
+          <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto mt-1">
             Your personal trainer will configure and assign your next progressive overload phase soon.
           </p>
         </div>
@@ -114,23 +114,23 @@ export const UserWorkoutsPage: React.FC = () => {
             return (
               <div
                 key={w.id}
-                className="bg-white rounded-3xl border border-neutral-200/80 shadow-sm overflow-hidden transition-all"
+                className="bg-white rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm overflow-hidden transition-all"
               >
                 {/* Top Summary Bar */}
                 <div
                   onClick={() => setExpandedId(isExpanded ? null : w.id)}
-                  className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-neutral-50/50"
+                  className="p-card sm:p-card flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer hover:bg-neutral-50/50"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                      w.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-purple-50 text-purple-600'
+                  <div className="flex items-start gap-6">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      w.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-[var(--color-brand-bg)] text-purple-600'
                     }`}>
                       <Dumbbell className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-black text-[#080512]">{w.workoutTitle}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                        <h3 className="text-base sm:text-lg font-bold text-[var(--color-text-main)]">{w.workoutTitle}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
                           w.status === 'COMPLETED'
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-amber-100 text-amber-800'
@@ -138,7 +138,7 @@ export const UserWorkoutsPage: React.FC = () => {
                           {w.status}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 mt-1">
+                      <div className="flex flex-wrap items-center gap-6 text-xs text-[var(--color-text-muted)] mt-1">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" /> Scheduled: {w.scheduledDate}
                         </span>
@@ -158,7 +158,7 @@ export const UserWorkoutsPage: React.FC = () => {
                           handleMarkComplete(w.id);
                         }}
                         disabled={actionLoading === w.id}
-                        className="px-4 py-2 rounded-xl bg-[#080512] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-neutral-800 transition-colors cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         <span>{actionLoading === w.id ? 'Saving...' : 'Mark Complete'}</span>
@@ -168,7 +168,7 @@ export const UserWorkoutsPage: React.FC = () => {
                         <CheckCircle2 className="w-4 h-4" /> Finished
                       </span>
                     )}
-                    <button className="text-neutral-400 hover:text-neutral-700">
+                    <button className="text-[var(--color-text-muted)] hover:text-neutral-700">
                       {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </button>
                   </div>
@@ -178,8 +178,8 @@ export const UserWorkoutsPage: React.FC = () => {
                 {isExpanded && (
                   <div className="px-6 pb-6 pt-2 border-t border-neutral-100 bg-neutral-50/40">
                     {w.notes && (
-                      <div className="mb-4 p-3.5 rounded-2xl bg-white border border-neutral-200/80 text-xs text-neutral-700">
-                        <span className="font-bold text-[#080512]">Trainer Instructions: </span>
+                      <div className="mb-4 p-4 rounded-lg bg-white border border-[var(--color-border-main)]/80 text-xs text-neutral-700">
+                        <span className="font-bold text-[var(--color-text-main)]">Trainer Instructions: </span>
                         {w.notes}
                       </div>
                     )}
@@ -187,7 +187,7 @@ export const UserWorkoutsPage: React.FC = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead>
-                          <tr className="border-b border-neutral-200/80 text-neutral-400 font-bold uppercase tracking-wider">
+                          <tr className="border-b border-[var(--color-border-main)]/80 text-[var(--color-text-muted)] font-bold uppercase tracking-wider">
                             <th className="pb-3">#</th>
                             <th className="pb-3">Exercise Name</th>
                             <th className="pb-3">Target Muscle</th>
@@ -200,16 +200,16 @@ export const UserWorkoutsPage: React.FC = () => {
                         <tbody className="divide-y divide-neutral-200/50">
                           {w.exercises.map((ex, idx) => (
                             <tr key={ex.id || idx} className="hover:bg-white/60">
-                              <td className="py-3 font-mono text-neutral-400 font-bold">{idx + 1}</td>
-                              <td className="py-3 font-black text-neutral-900">{ex.name}</td>
+                              <td className="py-3 font-mono text-[var(--color-text-muted)] font-bold">{idx + 1}</td>
+                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.name}</td>
                               <td className="py-3 text-neutral-600">{ex.targetMuscle}</td>
-                              <td className="py-3 font-bold text-neutral-800">{ex.sets}</td>
-                              <td className="py-3 font-bold text-neutral-800">{ex.reps}</td>
-                              <td className="py-3 font-bold text-purple-700">
+                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.sets}</td>
+                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.reps}</td>
+                              <td className="py-3 font-bold text-[var(--color-text-main)]">
                                 {ex.weightKg ? `${ex.weightKg} kg` : 'Bodyweight'}
                               </td>
-                              <td className="py-3 text-neutral-500 flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-neutral-400" />
+                              <td className="py-3 text-[var(--color-text-muted)] flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-[var(--color-text-muted)]" />
                                 <span>{ex.restSeconds}s</span>
                               </td>
                             </tr>

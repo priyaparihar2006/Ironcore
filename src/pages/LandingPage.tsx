@@ -39,11 +39,11 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F7FA] text-[#080512] font-sans antialiased selection:bg-purple-100 selection:text-purple-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-[var(--color-brand-bg)] text-[var(--color-text-main)] font-sans antialiased selection:bg-purple-100 selection:text-[var(--color-text-main)] flex flex-col justify-between">
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#080512] text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-semibold border border-purple-500/30 flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-6 right-6 z-50 bg-[var(--color-primary)] text-[var(--color-text-main)] px-5 py-3 rounded-lg shadow-sm text-xs sm:text-sm font-semibold border border-purple-500/30 flex items-center gap-2 animate-in slide-in-from-bottom-5 duration-300">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>{toastMessage}</span>
         </div>

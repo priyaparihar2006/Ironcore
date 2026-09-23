@@ -69,9 +69,9 @@ export const AdminMembershipsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {successToast && (
-        <div className="fixed top-6 right-6 z-50 bg-[#080512] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-purple-500/20 animate-fade-in">
+        <div className="fixed top-8 right-6 z-50 bg-[var(--color-primary)] text-[var(--color-text-main)] px-6 py-3 rounded-lg shadow-sm flex items-center gap-3 border border-purple-500/20 animate-fade-in">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-sm font-bold">{successToast}</span>
         </div>
@@ -79,30 +79,30 @@ export const AdminMembershipsPage: React.FC = () => {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
           Membership Tier Management
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Configure subscription privileges, adjust recurring price points, and monitor active subscriber distribution.
         </p>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-64 bg-neutral-200 rounded-3xl"></div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((p) => (
             <div
               key={p.id}
-              className="bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm flex flex-col justify-between"
+              className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-black uppercase text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold uppercase text-[var(--color-text-main)] bg-[var(--color-brand-bg)] px-3 py-1 rounded-full">
                     {p.name}
                   </span>
                   <button
@@ -114,32 +114,32 @@ export const AdminMembershipsPage: React.FC = () => {
                       setDescription(p.description);
                       setShowModal(true);
                     }}
-                    className="p-1.5 text-neutral-400 hover:text-[#080512] rounded-lg"
+                    className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] rounded-lg"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                 </div>
 
                 <div className="flex items-baseline gap-1 my-3">
-                  <span className="text-3xl font-black text-[#080512]">${p.monthlyPrice}</span>
-                  <span className="text-xs font-medium text-neutral-400">/ mo (${p.annualPrice} billed annually)</span>
+                  <span className="text-3xl font-bold text-[var(--color-text-main)]">${p.monthlyPrice}</span>
+                  <span className="text-xs font-medium text-[var(--color-text-muted)]">/ mo (${p.annualPrice} billed annually)</span>
                 </div>
 
-                <p className="text-xs text-neutral-500 mb-6">{p.description}</p>
+                <p className="text-xs text-[var(--color-text-muted)] mb-6">{p.description}</p>
 
                 <div className="space-y-2 border-t border-neutral-100 pt-4 mb-6">
                   {p.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-neutral-700">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600 mt-1 flex-shrink-0" />
                       <span>{f}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-center justify-between text-xs">
-                <span className="text-neutral-500 font-medium">Subscribers:</span>
-                <span className="font-black text-[#080512]">{p.activeCount} active</span>
+              <div className="p-4 rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100 flex items-center justify-between text-xs">
+                <span className="text-[var(--color-text-muted)] font-medium">Subscribers:</span>
+                <span className="font-bold text-[var(--color-text-main)]">{p.activeCount} active</span>
               </div>
             </div>
           ))}
@@ -148,53 +148,53 @@ export const AdminMembershipsPage: React.FC = () => {
 
       {/* Edit Tier Modal */}
       {showModal && editingPlan && (
-        <div className="fixed inset-0 bg-[#080512]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-neutral-200 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
+          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black text-[#080512]">Edit {editingPlan.name} Tier</h3>
+              <h3 className="text-xl font-bold text-[var(--color-text-main)]">Edit {editingPlan.name} Tier</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
+                <X className="w-5 h-5 text-[var(--color-text-muted)]" />
               </button>
             </div>
 
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Monthly Price ($)</label>
+                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Monthly Price ($)</label>
                   <input
                     type="number"
                     required
                     value={monthlyPrice}
                     onChange={(e) => setMonthlyPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Annual Tier Price ($)</label>
+                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Annual Tier Price ($)</label>
                   <input
                     type="number"
                     required
                     value={annualPrice}
                     onChange={(e) => setAnnualPrice(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Tier Pitch / Summary</label>
+                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Tier Pitch / Summary</label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
               >
                 {saving ? 'Updating...' : 'Save Pricing Changes'}
               </button>

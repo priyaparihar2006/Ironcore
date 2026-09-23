@@ -17,16 +17,16 @@ export const ProgressSection: React.FC = () => {
   const weeks = Array.from({ length: 14 });
 
   return (
-    <section id="progress" className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 relative bg-white/60">
+    <section id="progress" className="w-full px-4 md:px-8 lg:px-12 py-16 sm:py-24 relative bg-white/60">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200/60 text-xs font-semibold text-purple-800 mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--color-brand-bg)] border border-[var(--color-border-main)]/60 text-xs font-semibold text-purple-800 mb-3">
             <Trophy className="w-3.5 h-3.5 text-purple-600" />
             <span>Proven Biometric Transformations</span>
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#080512] tracking-tight mb-4">
+          <h2 className="font-display text-3xl sm:text-3xl lg:text-5xl font-bold text-[var(--color-text-main)] tracking-tight mb-4">
             Quantifiable Physical Evolution
           </h2>
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
@@ -37,13 +37,13 @@ export const ProgressSection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12">
           
           {/* Left Column: Before/After Transformation Card & Biometrics (7 Cols) */}
-          <div className="lg:col-span-7 rounded-[30px] bg-white border border-neutral-200/80 p-6 sm:p-8 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="lg:col-span-7 rounded-[30px] bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-6">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-main)] bg-[var(--color-brand-bg)] px-2.5 py-1 rounded-full">
                   Case Study: 6 Months Program
                 </span>
-                <h3 className="text-xl font-bold text-[#080512] mt-2">
+                <h3 className="text-xl font-bold text-[var(--color-text-main)] mt-2">
                   Devan M. — Recomposition & Hypertrophy
                 </h3>
               </div>
@@ -53,7 +53,7 @@ export const ProgressSection: React.FC = () => {
                 <button
                   onClick={() => setActiveTransformationTab('profile1')}
                   className={`px-3 py-1.5 rounded-full transition-all ${
-                    activeTransformationTab === 'profile1' ? 'bg-white text-[#080512] shadow-xs' : 'text-neutral-600'
+                    activeTransformationTab === 'profile1' ? 'bg-white text-[var(--color-text-main)] shadow-xs' : 'text-neutral-600'
                   }`}
                 >
                   Strength Split
@@ -61,7 +61,7 @@ export const ProgressSection: React.FC = () => {
                 <button
                   onClick={() => setActiveTransformationTab('profile2')}
                   className={`px-3 py-1.5 rounded-full transition-all ${
-                    activeTransformationTab === 'profile2' ? 'bg-white text-[#080512] shadow-xs' : 'text-neutral-600'
+                    activeTransformationTab === 'profile2' ? 'bg-white text-[var(--color-text-main)] shadow-xs' : 'text-neutral-600'
                   }`}
                 >
                   Fat Loss Cut
@@ -70,10 +70,10 @@ export const ProgressSection: React.FC = () => {
             </div>
 
             {/* Side-by-side or Interactive Comparison */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               
               {/* Before State Card */}
-              <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/70">
+              <div className="rounded-lg bg-[var(--color-brand-bg)] p-6 border border-[var(--color-border-main)]/70">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200 px-2 py-0.5 rounded-md">
                     MONTH 1 (START)
@@ -94,22 +94,22 @@ export const ProgressSection: React.FC = () => {
                 <div className="space-y-1 text-xs text-neutral-600">
                   <div className="flex justify-between">
                     <span>Squat 1RM:</span>
-                    <strong className="text-neutral-800">100 kg</strong>
+                    <strong className="text-[var(--color-text-main)]">100 kg</strong>
                   </div>
                   <div className="flex justify-between">
                     <span>Resting Heart Rate:</span>
-                    <strong className="text-neutral-800">74 bpm</strong>
+                    <strong className="text-[var(--color-text-main)]">74 bpm</strong>
                   </div>
                 </div>
               </div>
 
               {/* After State Card (Highlighted) */}
-              <div className="rounded-2xl bg-gradient-to-br from-purple-50/60 via-white to-pink-50/50 p-4 border border-purple-200 shadow-xs">
+              <div className="rounded-lg bg-gradient-to-br from-purple-50/60 via-white to-pink-50/50 p-6 border border-[var(--color-border-main)] shadow-xs">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-main)] bg-purple-100 px-2 py-0.5 rounded-md">
                     MONTH 6 (CURRENT)
                   </span>
-                  <span className="text-xs font-bold text-purple-900">70.4 kg (-13.8kg)</span>
+                  <span className="text-xs font-bold text-[var(--color-text-main)]">70.4 kg (-13.8kg)</span>
                 </div>
                 <div className="relative h-44 rounded-xl overflow-hidden bg-neutral-900 mb-3">
                   <img
@@ -120,7 +120,7 @@ export const ProgressSection: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3 justify-between">
                     <span className="text-emerald-400 text-xs font-bold">12.8% Body Fat</span>
-                    <span className="text-[10px] text-white bg-purple-600 px-2 py-0.5 rounded-full font-bold">+5.2kg Lean Mass</span>
+                    <span className="text-xs text-white bg-purple-600 px-2 py-0.5 rounded-full font-bold">+5.2kg Lean Mass</span>
                   </div>
                 </div>
                 <div className="space-y-1 text-xs text-neutral-600">
@@ -138,16 +138,16 @@ export const ProgressSection: React.FC = () => {
             </div>
 
             {/* Quick Summary Pill Bar */}
-            <div className="p-3.5 rounded-2xl bg-neutral-100/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="p-3.5 rounded-lg bg-neutral-100/80 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-emerald-600" />
-                <span className="text-neutral-700 font-medium">Waist Circumference: <strong className="text-[#080512]">-11 cm</strong></span>
+                <span className="text-neutral-700 font-medium">Waist Circumference: <strong className="text-[var(--color-text-main)]">-11 cm</strong></span>
               </div>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-purple-600" />
-                <span className="text-neutral-700 font-medium">VO2 Max Score: <strong className="text-[#080512]">52 ml/kg/min (+14)</strong></span>
+                <span className="text-neutral-700 font-medium">VO2 Max Score: <strong className="text-[var(--color-text-main)]">52 ml/kg/min (+14)</strong></span>
               </div>
-              <div className="flex items-center gap-1 text-purple-700 font-bold">
+              <div className="flex items-center gap-1 text-[var(--color-text-main)] font-bold">
                 <span>Verified by DEXA Scan</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
               </div>
@@ -159,21 +159,21 @@ export const ProgressSection: React.FC = () => {
           <div className="lg:col-span-5 space-y-6">
             
             {/* Strength Progression Card */}
-            <div className="rounded-[30px] bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+            <div className="rounded-[30px] bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-[#080512]">Strength Progression</h3>
-                <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">Compound PRs</span>
+                <h3 className="text-lg font-bold text-[var(--color-text-main)]">Strength Progression</h3>
+                <span className="text-xs font-bold text-[var(--color-text-main)] bg-[var(--color-brand-bg)] px-2.5 py-1 rounded-full">Compound PRs</span>
               </div>
 
               <div className="space-y-4">
                 {strengthMetrics.map((metric, idx) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-neutral-800">{metric.name}</span>
+                      <span className="font-semibold text-[var(--color-text-main)]">{metric.name}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-neutral-600 line-through text-[11px]">{metric.before}</span>
-                        <span className="font-bold text-[#080512]">{metric.current}</span>
-                        <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-sm">{metric.gain}</span>
+                        <span className="text-neutral-600 line-through text-xs">{metric.before}</span>
+                        <span className="font-bold text-[var(--color-text-main)]">{metric.current}</span>
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-sm">{metric.gain}</span>
                       </div>
                     </div>
                     <div className="w-full bg-neutral-100 rounded-full h-2.5 overflow-hidden">
@@ -188,15 +188,15 @@ export const ProgressSection: React.FC = () => {
             </div>
 
             {/* Weight Progression Curve Visualization */}
-            <div className="rounded-[30px] bg-white border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+            <div className="rounded-[30px] bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-7 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-base font-bold text-[#080512]">Weight Progression Curve</h3>
+                  <h3 className="text-base font-bold text-[var(--color-text-main)]">Weight Progression Curve</h3>
                   <span className="text-xs text-neutral-600">Weekly weigh-in averages</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-extrabold text-purple-900">70.0 kg</span>
-                  <span className="text-[10px] block text-emerald-600 font-bold">Target Reached!</span>
+                  <span className="text-lg font-bold text-[var(--color-text-main)]">70.0 kg</span>
+                  <span className="text-xs block text-emerald-600 font-bold">Target Reached!</span>
                 </div>
               </div>
 
@@ -226,7 +226,7 @@ export const ProgressSection: React.FC = () => {
                   <circle cx="170" cy="45" r="4" fill="#7C3AED" />
                   <circle cx="290" cy="65" r="5" fill="#10B981" stroke="#FFFFFF" strokeWidth="2" />
                 </svg>
-                <div className="flex justify-between text-[10px] text-neutral-600 font-medium pt-1 px-1">
+                <div className="flex justify-between text-xs text-neutral-600 font-medium pt-1 px-1">
                   <span>Wk 1 (84.2kg)</span>
                   <span>Wk 8 (79.0kg)</span>
                   <span>Wk 16 (74.1kg)</span>
@@ -243,10 +243,10 @@ export const ProgressSection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Consistency Heatmap (7 Cols) */}
-          <div className="lg:col-span-7 rounded-[30px] bg-white border border-neutral-200/80 p-6 sm:p-8 shadow-sm">
+          <div className="lg:col-span-7 rounded-[30px] bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-8 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div>
-                <h3 className="text-lg font-bold text-[#080512] flex items-center gap-2">
+                <h3 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-purple-600" />
                   Workout Consistency Matrix
                 </h3>
@@ -255,12 +255,12 @@ export const ProgressSection: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-neutral-600 text-[11px]">Less</span>
+                <span className="text-neutral-600 text-xs">Less</span>
                 <span className="w-3 h-3 rounded-xs bg-neutral-100" />
                 <span className="w-3 h-3 rounded-xs bg-purple-200" />
                 <span className="w-3 h-3 rounded-xs bg-purple-400" />
                 <span className="w-3 h-3 rounded-xs bg-purple-700" />
-                <span className="text-neutral-600 text-[11px]">More</span>
+                <span className="text-neutral-600 text-xs">More</span>
               </div>
             </div>
 
@@ -273,7 +273,7 @@ export const ProgressSection: React.FC = () => {
                     const activeSeed = (weekIdx * 7 + dayIdx * 3) % 10;
                     let bg = 'bg-neutral-100';
                     if (activeSeed > 7) bg = 'bg-purple-700';
-                    else if (activeSeed > 4) bg = 'bg-purple-500';
+                    else if (activeSeed > 4) bg = 'bg-[var(--color-brand-bg)]0';
                     else if (activeSeed > 2) bg = 'bg-purple-300';
 
                     return (
@@ -289,20 +289,20 @@ export const ProgressSection: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between pt-4 mt-4 border-t border-neutral-100 text-xs text-neutral-600">
-              <span className="flex items-center gap-1 font-semibold text-[#080512]">
+              <span className="flex items-center gap-1 font-semibold text-[var(--color-text-main)]">
                 <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                 Current Streak: 18 Days
               </span>
               <span>Longest Streak: 42 Days</span>
-              <span className="text-purple-700 font-bold">Top 5% Most Consistent in Club</span>
+              <span className="text-[var(--color-text-main)] font-bold">Top 5% Most Consistent in Club</span>
             </div>
           </div>
 
           {/* Monthly Achievements Badges (5 Cols) */}
-          <div className="lg:col-span-5 rounded-[30px] bg-white border border-neutral-200/80 p-6 sm:p-8 shadow-sm flex flex-col justify-between">
+          <div className="lg:col-span-5 rounded-[30px] bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-8 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#080512] flex items-center gap-2">
+                <h3 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-500" />
                   Monthly Achievements
                 </h3>
@@ -315,19 +315,19 @@ export const ProgressSection: React.FC = () => {
                 {ACHIEVEMENTS.map((ach) => (
                   <div
                     key={ach.id}
-                    className="p-3.5 rounded-2xl bg-neutral-50 hover:bg-purple-50/50 border border-neutral-200/70 transition-colors flex flex-col justify-between"
+                    className="p-3.5 rounded-lg bg-[var(--color-brand-bg)] hover:bg-[var(--color-brand-bg)]/50 border border-[var(--color-border-main)]/70 transition-colors flex flex-col justify-between"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                         <Trophy className="w-4 h-4" />
                       </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-neutral-700 border border-neutral-200">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white text-neutral-700 border border-[var(--color-border-main)]">
                         {ach.level}
                       </span>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#080512] leading-tight mb-1">{ach.title}</h4>
-                      <p className="text-[11px] text-neutral-600 leading-snug">{ach.description}</p>
+                      <h4 className="text-xs font-bold text-[var(--color-text-main)] leading-tight mb-1">{ach.title}</h4>
+                      <p className="text-xs text-neutral-600 leading-snug">{ach.description}</p>
                     </div>
                   </div>
                 ))}
@@ -336,7 +336,7 @@ export const ProgressSection: React.FC = () => {
 
             <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between text-xs">
               <span className="text-neutral-600">Next unlock: <strong>200kg Deadlift Milestone</strong></span>
-              <span className="text-purple-700 font-bold">85% Complete</span>
+              <span className="text-[var(--color-text-main)] font-bold">85% Complete</span>
             </div>
           </div>
 

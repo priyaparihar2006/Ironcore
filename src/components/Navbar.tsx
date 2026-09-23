@@ -46,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
       <nav
         className={`w-full max-w-7xl mx-auto h-20 sm:h-24 px-6 sm:px-10 lg:px-12 flex items-center justify-between transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#F8F7FA]/90 backdrop-blur-xl border-b border-neutral-200/70 shadow-xs'
+            ? 'bg-[var(--color-brand-bg)]/90 backdrop-blur-xl border-b border-[var(--color-border-main)]/70 shadow-xs'
             : 'bg-transparent'
         }`}
       >
@@ -56,10 +56,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
           className="flex items-center gap-2.5 group cursor-pointer"
           id="nav-logo"
         >
-          <div className="w-8 h-8 bg-[#080512] rounded-lg flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
+          <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-xs transition-transform group-hover:scale-105">
             <div className="w-4 h-4 border-2 border-white rounded-full"></div>
           </div>
-          <span className="text-2xl font-black tracking-tighter text-[#080512]">
+          <span className="text-2xl font-bold tracking-tighter text-[var(--color-text-main)]">
             IronCore
           </span>
         </Link>
@@ -70,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
             <a
               key={link.label}
               href={link.href}
-              className="text-[#080512] opacity-70 hover:opacity-100 transition-opacity tracking-tight"
+              className="text-[var(--color-text-main)] opacity-70 hover:opacity-100 transition-opacity tracking-tight"
             >
               {link.label}
             </a>
@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
           {user && (
             <Link
               to={getDashboardPath()}
-              className="text-purple-700 font-bold hover:text-purple-900 transition-colors flex items-center gap-1.5"
+              className="text-[var(--color-text-main)] font-bold hover:text-[var(--color-text-main)] transition-colors flex items-center gap-1.5"
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Portal Dashboard</span>
@@ -87,12 +87,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
         </div>
 
         {/* Action Button */}
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="hidden sm:flex items-center gap-6">
           {user ? (
             <div className="flex items-center gap-3">
               <Link
                 to={getDashboardPath()}
-                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full bg-white border border-neutral-200/80 shadow-xs hover:bg-neutral-50 transition-all"
+                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-full bg-white border border-[var(--color-border-main)]/80 shadow-xs hover:bg-[var(--color-brand-bg)] transition-all"
               >
                 <img
                   src={resolveAvatarUrl(user)}
@@ -100,17 +100,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
                   referrerPolicy="no-referrer"
                   className="w-7 h-7 rounded-full object-cover"
                 />
-                <span className="text-xs font-bold text-[#080512]">
+                <span className="text-xs font-bold text-[var(--color-text-main)]">
                   {user.name.split(' ')[0]}
                 </span>
-                <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-text-main)]">
                   {user.role}
                 </span>
               </Link>
               <button
                 onClick={logout}
                 title="Sign Out"
-                className="p-2.5 rounded-full border border-neutral-200 text-neutral-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                className="p-2.5 rounded-full border border-[var(--color-border-main)] text-[var(--color-text-muted)] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -120,14 +120,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
               <Link
                 to="/login"
                 id="nav-signin-btn"
-                className="text-sm font-semibold text-[#080512] opacity-70 hover:opacity-100 transition-opacity"
+                className="text-sm font-semibold text-[var(--color-text-main)] opacity-70 hover:opacity-100 transition-opacity"
               >
                 Sign In
               </Link>
               <Link
                 to="/signup"
                 id="nav-free-trial-btn"
-                className="bg-[#080512] text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl shadow-black/10 hover:bg-neutral-800 transition-all duration-200 active:scale-95"
+                className="bg-[var(--color-primary)] text-[var(--color-text-main)] px-6 py-3 rounded-full text-sm font-bold shadow-sm shadow-black/10 hover:bg-neutral-800 transition-all duration-200 active:scale-95"
               >
                 Join IronCore
               </Link>
@@ -140,21 +140,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
           {user ? (
             <Link
               to={getDashboardPath()}
-              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-[#080512]"
+              className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-black"
             >
               Dashboard
             </Link>
           ) : (
             <Link
               to="/signup"
-              className="sm:hidden px-4 py-2 rounded-full text-xs font-bold text-white bg-[#080512]"
+              className="sm:hidden px-4 py-2 rounded-full text-xs font-bold text-white bg-black"
             >
               Join
             </Link>
           )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-neutral-700 hover:text-[#080512] hover:bg-neutral-100 transition-colors"
+            className="p-2 rounded-xl text-neutral-700 hover:text-[var(--color-text-main)] hover:bg-neutral-100 transition-colors"
             aria-label="Toggle navigation menu"
             id="mobile-menu-toggle"
           >
@@ -165,13 +165,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
 
       {/* Mobile Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden mx-4 my-2 p-5 rounded-[24px] bg-white/95 backdrop-blur-xl border border-neutral-200 shadow-xl flex flex-col gap-2">
+        <div className="lg:hidden mx-4 my-2 p-6 rounded-lg bg-white/95 backdrop-blur-xl border border-[var(--color-border-main)] shadow-sm flex flex-col gap-2">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 text-sm font-bold text-neutral-800 hover:bg-neutral-100 rounded-xl transition-colors"
+              className="px-3 py-2 text-sm font-bold text-[var(--color-text-main)] hover:bg-neutral-100 rounded-xl transition-colors"
             >
               {link.label}
             </a>
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
                 <Link
                   to={getDashboardPath()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 text-center text-sm font-bold rounded-full bg-[#080512] text-white flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full py-3 text-center text-sm font-bold rounded-full bg-[var(--color-primary)] text-[var(--color-text-main)] flex items-center justify-center gap-2 shadow-sm"
                 >
                   <LayoutDashboard className="w-4 h-4 text-purple-300" />
                   <span>Open {user.role} Dashboard</span>
@@ -203,14 +203,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenTrial }) => {
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-2.5 text-center text-xs font-bold text-[#080512] hover:bg-neutral-100 rounded-xl block"
+                  className="w-full py-2.5 text-center text-xs font-bold text-[var(--color-text-main)] hover:bg-neutral-100 rounded-xl block"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3 text-center text-sm font-bold rounded-full bg-[#080512] text-white flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full py-3 text-center text-sm font-bold rounded-full bg-[var(--color-primary)] text-[var(--color-text-main)] flex items-center justify-center gap-2 shadow-sm"
                 >
                   <span>Start 14-Day Trial</span>
                   <ArrowRight className="w-4 h-4 text-purple-300" />

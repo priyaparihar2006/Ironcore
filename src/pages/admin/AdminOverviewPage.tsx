@@ -41,7 +41,7 @@ export const AdminOverviewPage: React.FC = () => {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-8 bg-neutral-200 rounded-xl w-64"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-32 bg-neutral-200 rounded-3xl"></div>
           ))}
@@ -52,7 +52,7 @@ export const AdminOverviewPage: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="p-8 rounded-3xl bg-red-50 text-red-700 text-center">
+      <div className="p-card rounded-3xl bg-red-50 text-red-700 text-center">
         <AlertCircle className="w-8 h-8 mx-auto text-red-500 mb-2" />
         <h3 className="font-bold">Error loading admin metrics</h3>
         <p className="text-xs text-red-600 mb-4">{error}</p>
@@ -66,14 +66,14 @@ export const AdminOverviewPage: React.FC = () => {
   const { stats, recentUsers, recentPayments } = data;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
             Facility Executive Summary
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Global metrics across membership revenue, facility throughput, coach ratios, and athlete retention.
           </p>
         </div>
@@ -81,68 +81,68 @@ export const AdminOverviewPage: React.FC = () => {
         <div className="flex gap-2">
           <Link
             to="/admin/users"
-            className="px-4 py-2.5 rounded-xl bg-[#080512] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-neutral-800"
+            className="px-4 py-3 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800"
           >
             <Users className="w-3.5 h-3.5" />
             <span>Manage Users</span>
           </Link>
           <Link
             to="/admin/payments"
-            className="px-4 py-2.5 rounded-xl bg-purple-50 text-purple-900 border border-purple-200 text-xs font-bold flex items-center gap-1.5 hover:bg-purple-100"
+            className="px-4 py-3 rounded-xl bg-[var(--color-brand-bg)] text-[var(--color-text-main)] border border-[var(--color-border-main)] text-xs font-bold flex items-center gap-2 hover:bg-purple-100"
           >
-            <DollarSign className="w-3.5 h-3.5 text-purple-700" />
+            <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-main)]" />
             <span>View Invoices</span>
           </Link>
         </div>
       </div>
 
       {/* Primary KPI Blocks */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Total Users</span>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
+        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
+          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Total Users</span>
             <Users className="w-4 h-4 text-purple-600" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#080512]">{stats.totalUsers}</div>
-          <div className="text-[11px] font-bold text-emerald-600 mt-1">+12% this month</div>
+          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.totalUsers}</div>
+          <div className="text-xs font-bold text-emerald-600 mt-1">+12% this month</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Active Members</span>
+        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
+          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Active Members</span>
             <CreditCard className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#080512]">{stats.activeMembers}</div>
-          <div className="text-[11px] font-semibold text-neutral-500 mt-1">Paid subscriptions</div>
+          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.activeMembers}</div>
+          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Paid subscriptions</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Total Revenue</span>
+        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Total Revenue</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-700">
+          <div className="text-3xl font-bold text-emerald-700">
             ${stats.totalRevenue.toLocaleString()}
           </div>
-          <div className="text-[11px] font-bold text-emerald-600 mt-1">+18.4% ARR growth</div>
+          <div className="text-xs font-bold text-emerald-600 mt-1">+18.4% ARR growth</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Trainers</span>
+        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
+          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Trainers</span>
             <Shield className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#080512]">{stats.activeTrainers}</div>
-          <div className="text-[11px] font-semibold text-neutral-500 mt-1">Certified staff</div>
+          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.activeTrainers}</div>
+          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Certified staff</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-neutral-200/80 shadow-sm">
-          <div className="flex items-center justify-between text-neutral-400 mb-2">
-            <span className="text-xs font-bold uppercase text-neutral-500">Check-ins</span>
+        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
+          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
+            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Check-ins</span>
             <Activity className="w-4 h-4 text-rose-500" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-[#080512]">{stats.todayCheckins}</div>
-          <div className="text-[11px] font-semibold text-neutral-500 mt-1">Turnstile scans today</div>
+          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.todayCheckins}</div>
+          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Turnstile scans today</div>
         </div>
       </div>
 
@@ -150,13 +150,13 @@ export const AdminOverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Recent Registered Users */}
-        <div className="lg:col-span-6 bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm">
+        <div className="lg:col-span-6 bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-black text-[#080512]">Recent Registrations</h2>
-              <p className="text-xs text-neutral-500 mt-0.5">Newly joined gym members</p>
+              <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recent Registrations</h2>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">Newly joined gym members</p>
             </div>
-            <Link to="/admin/users" className="text-xs font-bold text-purple-700 hover:underline">
+            <Link to="/admin/users" className="text-xs font-bold text-[var(--color-text-main)] hover:underline">
               View Directory →
             </Link>
           </div>
@@ -165,15 +165,15 @@ export const AdminOverviewPage: React.FC = () => {
             {recentUsers.map((u) => (
               <div key={u.userId} className="py-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-900 font-bold text-xs flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-xl bg-purple-100 text-[var(--color-text-main)] font-bold text-xs flex items-center justify-center">
                     {u.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-xs text-[#080512]">{u.name}</div>
-                    <div className="text-[10px] text-neutral-400">{u.fitnessGoal}</div>
+                    <div className="font-bold text-xs text-[var(--color-text-main)]">{u.name}</div>
+                    <div className="text-xs text-[var(--color-text-muted)]">{u.fitnessGoal}</div>
                   </div>
                 </div>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
+                <span className="text-xs font-bold uppercase px-2 py-1 rounded-full bg-neutral-100 text-neutral-600">
                   {u.status || 'ACTIVE'}
                 </span>
               </div>
@@ -182,13 +182,13 @@ export const AdminOverviewPage: React.FC = () => {
         </div>
 
         {/* Recent Payments */}
-        <div className="lg:col-span-6 bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm">
+        <div className="lg:col-span-6 bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-black text-[#080512]">Recent Ledger Transactions</h2>
-              <p className="text-xs text-neutral-500 mt-0.5">Membership dues and upgrades</p>
+              <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recent Ledger Transactions</h2>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">Membership dues and upgrades</p>
             </div>
-            <Link to="/admin/payments" className="text-xs font-bold text-purple-700 hover:underline">
+            <Link to="/admin/payments" className="text-xs font-bold text-[var(--color-text-main)] hover:underline">
               All Invoices →
             </Link>
           </div>
@@ -197,14 +197,14 @@ export const AdminOverviewPage: React.FC = () => {
             {recentPayments.map((p) => (
               <div key={p.id} className="py-3 flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-xs text-[#080512]">{p.planName} Tier</div>
-                  <div className="text-[10px] text-neutral-400">
+                  <div className="font-bold text-xs text-[var(--color-text-main)]">{p.planName} Tier</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">
                     {p.date} • {p.paymentMethod}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-black text-xs text-emerald-700">+${p.amount}</div>
-                  <span className="text-[9px] font-black uppercase text-emerald-600">
+                  <div className="font-bold text-xs text-emerald-700">+${p.amount}</div>
+                  <span className="text-[9px] font-bold uppercase text-emerald-600">
                     {p.status}
                   </span>
                 </div>

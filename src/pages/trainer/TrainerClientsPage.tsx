@@ -74,9 +74,9 @@ export const TrainerClientsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {successToast && (
-        <div className="fixed top-6 right-6 z-50 bg-[#080512] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-purple-500/20 animate-fade-in">
+        <div className="fixed top-8 right-6 z-50 bg-[var(--color-primary)] text-[var(--color-text-main)] px-6 py-3 rounded-lg shadow-sm flex items-center gap-3 border border-purple-500/20 animate-fade-in">
           <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           <span className="text-sm font-bold">{successToast}</span>
         </div>
@@ -84,10 +84,10 @@ export const TrainerClientsPage: React.FC = () => {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
           Assigned Athlete Profiles
         </h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Review physiological baselines, targets, and prescribe periodized workout regimens.
         </p>
       </div>
@@ -101,7 +101,7 @@ export const TrainerClientsPage: React.FC = () => {
           
           {/* Athlete List (4 Cols) */}
           <div className="lg:col-span-4 space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-400 px-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] px-2">
               Athletes ({clients.length})
             </h2>
             {clients.map((c) => {
@@ -110,26 +110,26 @@ export const TrainerClientsPage: React.FC = () => {
                 <div
                   key={c.userId}
                   onClick={() => setSelectedClient(c)}
-                  className={`p-4 rounded-3xl border transition-all cursor-pointer flex items-center justify-between ${
+                  className={`p-card rounded-3xl border transition-all cursor-pointer flex items-center justify-between ${
                     isSelected
-                      ? 'bg-[#080512] text-white border-[#080512] shadow-md'
-                      : 'bg-white text-neutral-800 border-neutral-200/80 hover:bg-neutral-50'
+                      ? 'bg-[var(--color-primary)] text-[var(--color-text-main)] border-gray-900 shadow-sm'
+                      : 'bg-white text-[var(--color-text-main)] border-[var(--color-border-main)]/80 hover:bg-[var(--color-brand-bg)]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                      isSelected ? 'bg-white/10 text-white' : 'bg-purple-100 text-purple-900'
+                      isSelected ? 'bg-white/10 text-white' : 'bg-purple-100 text-[var(--color-text-main)]'
                     }`}>
                       {c.name.charAt(0)}
                     </div>
                     <div>
                       <div className="font-bold text-sm leading-tight">{c.name}</div>
-                      <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/60' : 'text-neutral-400'}`}>
+                      <div className={`text-xs mt-1 ${isSelected ? 'text-white/60' : 'text-[var(--color-text-muted)]'}`}>
                         {c.fitnessGoal}
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-neutral-400'}`} />
+                  <ChevronRight className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-[var(--color-text-muted)]'}`} />
                 </div>
               );
             })}
@@ -138,21 +138,21 @@ export const TrainerClientsPage: React.FC = () => {
           {/* Selected Athlete Dossier (8 Cols) */}
           <div className="lg:col-span-8">
             {selectedClient ? (
-              <div className="bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-100">
+              <div className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 px-2.5 py-1 rounded-full bg-purple-50">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-main)] px-3 py-1 rounded-full bg-[var(--color-brand-bg)]">
                       Athlete Profile
                     </span>
-                    <h2 className="text-2xl font-black text-[#080512] mt-1">{selectedClient.name}</h2>
-                    <p className="text-xs text-neutral-500 mt-0.5">
+                    <h2 className="text-2xl font-bold text-[var(--color-text-main)] mt-1">{selectedClient.name}</h2>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
                       Contact: {selectedClient.phone || 'No phone recorded'} • Gender: {selectedClient.gender || 'Not specified'}
                     </p>
                   </div>
 
                   <button
                     onClick={() => setShowAssignModal(true)}
-                    className="px-5 py-3 rounded-2xl bg-[#080512] text-white text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 cursor-pointer shadow-md self-start sm:self-center"
+                    className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 cursor-pointer shadow-sm self-start sm:self-center"
                   >
                     <Dumbbell className="w-4 h-4 text-purple-300" />
                     <span>Assign Workout Plan</span>
@@ -161,37 +161,37 @@ export const TrainerClientsPage: React.FC = () => {
 
                 {/* Biometrics Card */}
                 <div>
-                  <h3 className="text-sm font-bold text-[#080512] uppercase tracking-wider mb-3">
+                  <h3 className="text-sm font-bold text-[var(--color-text-main)] uppercase tracking-wider mb-3">
                     Biometric Measurements
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400">Current Weight</span>
-                      <div className="text-lg font-black text-[#080512] mt-1">
+                    <div className="p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100">
+                      <span className="text-xs uppercase font-bold text-[var(--color-text-muted)]">Current Weight</span>
+                      <div className="text-lg font-bold text-[var(--color-text-main)] mt-1">
                         {selectedClient.measurements?.currentWeightKg !== undefined
                           ? `${selectedClient.measurements.currentWeightKg} kg`
                           : 'Not provided'}
                       </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400">Target Weight</span>
-                      <div className="text-lg font-black text-emerald-700 mt-1">
+                    <div className="p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100">
+                      <span className="text-xs uppercase font-bold text-[var(--color-text-muted)]">Target Weight</span>
+                      <div className="text-lg font-bold text-emerald-700 mt-1">
                         {selectedClient.measurements?.targetWeightKg !== undefined
                           ? `${selectedClient.measurements.targetWeightKg} kg`
                           : 'Not provided'}
                       </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400">Height</span>
-                      <div className="text-lg font-black text-[#080512] mt-1">
+                    <div className="p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100">
+                      <span className="text-xs uppercase font-bold text-[var(--color-text-muted)]">Height</span>
+                      <div className="text-lg font-bold text-[var(--color-text-main)] mt-1">
                         {selectedClient.measurements?.heightCm !== undefined
                           ? `${selectedClient.measurements.heightCm} cm`
                           : 'Not provided'}
                       </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400">Body Fat %</span>
-                      <div className="text-lg font-black text-[#080512] mt-1">
+                    <div className="p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100">
+                      <span className="text-xs uppercase font-bold text-[var(--color-text-muted)]">Body Fat %</span>
+                      <div className="text-lg font-bold text-[var(--color-text-main)] mt-1">
                         {selectedClient.measurements?.bodyFatPercent !== undefined
                           ? `${selectedClient.measurements.bodyFatPercent}%`
                           : 'Not provided'}
@@ -201,12 +201,12 @@ export const TrainerClientsPage: React.FC = () => {
                 </div>
 
                 {/* Primary Objective */}
-                <div className="p-5 rounded-2xl bg-purple-50 border border-purple-200/60">
-                  <div className="flex items-center gap-2 text-xs font-bold text-purple-900 mb-1">
-                    <Target className="w-4 h-4 text-purple-700" />
+                <div className="p-card rounded-lg bg-[var(--color-brand-bg)] border border-[var(--color-border-main)]/60">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-main)] mb-1">
+                    <Target className="w-4 h-4 text-[var(--color-text-main)]" />
                     Athlete Goal Focus
                   </div>
-                  <p className="text-sm font-black text-[#080512]">
+                  <p className="text-sm font-bold text-[var(--color-text-main)]">
                     {selectedClient.fitnessGoal}
                   </p>
                   <p className="text-xs text-neutral-600 mt-1">
@@ -215,7 +215,7 @@ export const TrainerClientsPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-12 text-center text-neutral-400 bg-white rounded-3xl border border-neutral-200">
+              <div className="p-12 text-center text-[var(--color-text-muted)] bg-white rounded-3xl border border-[var(--color-border-main)]">
                 Select an athlete to review details.
               </div>
             )}
@@ -226,25 +226,25 @@ export const TrainerClientsPage: React.FC = () => {
 
       {/* Assign Modal */}
       {showAssignModal && selectedClient && (
-        <div className="fixed inset-0 bg-[#080512]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-neutral-200 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
+          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-xl font-black text-[#080512]">Assign Workout Routine</h3>
-                <p className="text-xs text-neutral-500 mt-0.5">To athlete: {selectedClient.name}</p>
+                <h3 className="text-xl font-bold text-[var(--color-text-main)]">Assign Workout Routine</h3>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1">To athlete: {selectedClient.name}</p>
               </div>
               <button onClick={() => setShowAssignModal(false)} className="p-1 rounded-full hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
+                <X className="w-5 h-5 text-[var(--color-text-muted)]" />
               </button>
             </div>
 
             <form onSubmit={handleAssignWorkout} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Select Workout Template *</label>
+                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Select Workout Template *</label>
                 <select
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
                 >
                   {workoutPlans.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -255,31 +255,31 @@ export const TrainerClientsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Execution Date *</label>
+                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Execution Date *</label>
                 <input
                   type="date"
                   required
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Coach Notes & Intensity Guidance</label>
+                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Coach Notes & Intensity Guidance</label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Focus on keeping elbows tucked on bench press. 2 min rest between top working sets."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={assigning}
-                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
               >
                 {assigning ? 'Assigning...' : 'Assign to Athlete Portal'}
               </button>
