@@ -1136,6 +1136,11 @@ apiRouter.post(
       return;
     }
 
+    if (req.user!.role !== 'ADMIN' && client.assignedTrainerId !== req.user!.id) {
+      res.status(403).json({ error: 'You are not authorized to assign workouts to this client.' });
+      return;
+    }
+
     const assignment: WorkoutAssignment = {
       id: `assign_${Date.now()}`,
       userId: client.id,

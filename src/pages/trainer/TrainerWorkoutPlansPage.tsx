@@ -89,21 +89,21 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#080512]">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
             Workout Regimen Vault
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Build and curate master training templates, exercise sequences, and progressive load schedules.
           </p>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="px-5 py-3 rounded-2xl bg-[#080512] text-white text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-lg shadow-purple-950/5"
+          className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-sm shadow-purple-950/5"
         >
           <Plus className="w-4 h-4" />
           <span>New Workout Template</span>
@@ -112,37 +112,37 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
 
       {/* Plans Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className="bg-white rounded-[32px] p-6 sm:p-8 border border-neutral-200/80 shadow-sm flex flex-col justify-between"
+              className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-purple-100 text-[var(--color-text-main)] text-xs font-bold uppercase">
                     {plan.targetMuscle}
                   </span>
-                  <span className="text-xs font-semibold text-neutral-400">
+                  <span className="text-xs font-semibold text-[var(--color-text-muted)]">
                     {plan.exercises.length} Exercises
                   </span>
                 </div>
 
-                <h3 className="text-xl font-black text-[#080512]">{plan.title}</h3>
-                <p className="text-xs text-neutral-500 mt-1 mb-6 leading-relaxed">
+                <h3 className="text-xl font-bold text-[var(--color-text-main)]">{plan.title}</h3>
+                <p className="text-xs text-[var(--color-text-muted)] mt-1 mb-6 leading-relaxed">
                   {plan.description}
                 </p>
 
                 <div className="space-y-2 border-t border-neutral-100 pt-4">
                   {plan.exercises.map((ex, i) => (
-                    <div key={ex.id || i} className="flex items-center justify-between text-xs py-1.5">
-                      <span className="font-bold text-neutral-800">{ex.name}</span>
-                      <span className="font-mono text-neutral-500">
+                    <div key={ex.id || i} className="flex items-center justify-between text-xs py-2">
+                      <span className="font-bold text-[var(--color-text-main)]">{ex.name}</span>
+                      <span className="font-mono text-[var(--color-text-muted)]">
                         {ex.sets} × {ex.reps} {ex.weightKg ? `@ ${ex.weightKg}kg` : ''}
                       </span>
                     </div>
@@ -156,50 +156,50 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
 
       {/* Create Plan Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-[#080512]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-neutral-200 max-h-[90vh] overflow-y-auto animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
+          <div className="bg-white rounded-lg p-card sm:p-card max-w-2xl w-full shadow-sm border border-[var(--color-border-main)] max-h-[90vh] overflow-y-auto animate-fade-in">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black text-[#080512]">Build New Workout Routine</h3>
+              <h3 className="text-xl font-bold text-[var(--color-text-main)]">Build New Workout Routine</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">
-                <X className="w-5 h-5 text-neutral-500" />
+                <X className="w-5 h-5 text-[var(--color-text-muted)]" />
               </button>
             </div>
 
             <form onSubmit={handleCreatePlan} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Routine Title *</label>
+                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Routine Title *</label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Posterior Chain & Glute Specialization"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#080512] mb-1">Target Anatomy *</label>
+                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Target Anatomy *</label>
                   <input
                     type="text"
                     required
                     value={targetMuscle}
                     onChange={(e) => setTargetMuscle(e.target.value)}
                     placeholder="e.g. Chest / Back / Delts"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#080512] mb-1">Description / Protocol</label>
+                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Description / Protocol</label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g. Hypertrophy focus with 2 RIR (reps in reserve)."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium"
+                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={addExerciseRow}
-                    className="text-xs font-bold text-purple-700 hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[var(--color-text-main)] hover:underline flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Exercise
                   </button>
@@ -220,7 +220,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
 
                 <div className="space-y-3">
                   {exercises.map((ex, idx) => (
-                    <div key={ex.id || idx} className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-wrap gap-2 items-center">
+                    <div key={ex.id || idx} className="p-4 rounded-lg bg-[var(--color-brand-bg)] border border-[var(--color-border-main)] flex flex-wrap gap-2 items-center">
                       <input
                         type="text"
                         value={ex.name}
@@ -230,7 +230,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Exercise name"
-                        className="flex-1 min-w-[150px] px-2.5 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs font-bold"
+                        className="flex-1 min-w-[150px] px-3 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-bold"
                       />
                       <input
                         type="number"
@@ -241,7 +241,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Sets"
-                        className="w-16 px-2 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs font-mono"
+                        className="w-16 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
                       />
                       <input
                         type="number"
@@ -252,7 +252,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Reps"
-                        className="w-16 px-2 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs font-mono"
+                        className="w-16 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
                       />
                       <input
                         type="number"
@@ -263,13 +263,13 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Load (kg)"
-                        className="w-20 px-2 py-1.5 rounded-lg border border-neutral-200 bg-white text-xs font-mono"
+                        className="w-20 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
                       />
                       {exercises.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeExerciseRow(idx)}
-                          className="p-1.5 text-neutral-400 hover:text-red-600 rounded-lg"
+                          className="p-2 text-[var(--color-text-muted)] hover:text-red-600 rounded-lg"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -282,7 +282,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={creating}
-                className="w-full py-3.5 rounded-2xl bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer mt-4"
+                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer mt-4"
               >
                 {creating ? 'Saving Routine...' : 'Save Routine to Vault'}
               </button>

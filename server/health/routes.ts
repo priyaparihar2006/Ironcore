@@ -17,6 +17,7 @@ import { foodPortion } from '../nutrition/foods.js';
 import { buildReport } from '../reports/service.js';
 import type { DietPlan, FoodPortion, HealthPreferences, MealDraft } from '../../src/health.js';
 import rateLimit from 'express-rate-limit';
+import { aiConfig } from '../ai/config.js';
 
 export const healthRouter = asyncRouter();
 healthRouter.use(
@@ -106,6 +107,7 @@ healthRouter.get('/user/health', async (req: AuthenticatedRequest, res: Response
     estimate: currentEstimate(db, id),
     activeTarget: activeTarget(db, id),
     aiAvailable: aiAvailable(),
+    aiProviderHost: aiConfig() ? new URL(aiConfig()!.endpoint).hostname : undefined,
     foodAvailable: !!process.env.FOOD_DATA_API_KEY,
     policyReviewed: policyReviewed(),
   });

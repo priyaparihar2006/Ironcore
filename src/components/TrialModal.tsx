@@ -35,13 +35,13 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-[32px] bg-white border border-neutral-200/80 p-6 sm:p-8 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg rounded-lg bg-white border border-[var(--color-border-main)]/80 p-8 sm:p-8 shadow-sm overflow-hidden max-h-[90vh] overflow-y-auto">
         
         {/* Close Button */}
         <button
           onClick={handleResetAndClose}
-          className="absolute top-5 right-5 p-2 rounded-full text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
+          className="absolute top-6 right-5 p-2 rounded-full text-neutral-600 hover:text-black hover:bg-neutral-100 transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -49,12 +49,12 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
 
         {!isSubmitted ? (
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-xs font-semibold text-purple-700 mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--color-brand-bg)] text-xs font-semibold text-[var(--color-text-main)] mb-3">
               <Sparkles className="w-3.5 h-3.5" />
               <span>14-Day Free Access Pass</span>
             </div>
 
-            <h3 className="text-2xl font-bold text-[#080512] mb-1">
+            <h3 className="text-2xl font-bold text-[var(--color-text-main)] mb-1">
               Start Your IronCore Trial
             </h3>
             <p className="text-xs sm:text-sm text-neutral-600 mb-6">
@@ -74,14 +74,14 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                       type="button"
                       key={plan.id}
                       onClick={() => setSelectedPlanId(plan.id)}
-                      className={`p-2.5 rounded-2xl border text-center transition-all ${
+                      className={`p-2.5 rounded-lg border text-center transition-all ${
                         selectedPlanId === plan.id
-                          ? 'border-purple-600 bg-purple-50/70 text-purple-950 font-bold shadow-xs'
-                          : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                          ? 'border-purple-600 bg-[var(--color-brand-bg)]/70 text-purple-950 font-bold shadow-xs'
+                          : 'border-[var(--color-border-main)] text-neutral-600 hover:bg-[var(--color-brand-bg)]'
                       }`}
                     >
                       <div className="text-xs font-bold">{plan.name}</div>
-                      <div className="text-[11px] text-purple-700 font-extrabold">{plan.currency}{plan.monthlyPrice}/mo</div>
+                      <div className="text-xs text-[var(--color-text-main)] font-bold">{plan.currency}{plan.monthlyPrice}/mo</div>
                     </button>
                   ))}
                 </div>
@@ -98,7 +98,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                   placeholder="e.g. Liam Vance"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-main)] text-xs sm:text-sm text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
                 maxLength={100} autoComplete="name" />
               </div>
 
@@ -113,7 +113,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                   placeholder="e.g. liam@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-main)] text-xs sm:text-sm text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
                 maxLength={254} autoComplete="email" />
               </div>
 
@@ -128,7 +128,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                   placeholder="e.g. +91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-main)] text-xs sm:text-sm text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
                 maxLength={32} autoComplete="tel" />
               </div>
 
@@ -140,7 +140,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
                 <select
                   value={fitnessGoal}
                   onChange={(e) => setFitnessGoal(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200 text-xs sm:text-sm text-[#080512] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--color-border-main)] text-xs sm:text-sm text-[var(--color-text-main)] focus:outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white bg-white"
                 >
                   <option>Strength & Heavy Compound Lifting</option>
                   <option>Lean Muscle Hypertrophy</option>
@@ -154,14 +154,14 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-full bg-[#080512] hover:bg-neutral-800 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all"
+                  className="w-full py-3.5 rounded-full bg-black hover:bg-neutral-800 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all"
                 >
                   <span>Activate 14-Day Free Pass</span>
                   <ArrowRight className="w-4 h-4 text-purple-300" />
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-600 pt-1">
+              <div className="flex items-center justify-center gap-2 text-xs text-neutral-600 pt-1">
                 <Shield className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Zero credit card required • Instant digital club barcode</span>
               </div>
@@ -175,7 +175,7 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
               <CheckCircle className="w-8 h-8" />
             </div>
 
-            <h3 className="text-2xl font-bold text-[#080512] mb-2">
+            <h3 className="text-2xl font-bold text-[var(--color-text-main)] mb-2">
               Pass Activated, {fullName.split(' ')[0] || 'Athlete'}!
             </h3>
             <p className="text-sm text-neutral-600 mb-6">
@@ -183,26 +183,26 @@ export const TrialModal: React.FC<TrialModalProps> = ({ isOpen, onClose, default
             </p>
 
             {/* Mock Digital Badge */}
-            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 mb-6 max-w-xs mx-auto text-left">
-              <div className="flex items-center justify-between text-xs font-bold text-neutral-700 pb-2 border-b border-neutral-200">
+            <div className="p-6 rounded-lg bg-[var(--color-brand-bg)] border border-[var(--color-border-main)] mb-6 max-w-xs mx-auto text-left">
+              <div className="flex items-center justify-between text-xs font-bold text-neutral-700 pb-2 border-b border-[var(--color-border-main)]">
                 <span>IRONCORE DIGITAL PASS</span>
-                <span className="text-purple-700 uppercase">{selectedPlanId}</span>
+                <span className="text-[var(--color-text-main)] uppercase">{selectedPlanId}</span>
               </div>
               <div className="pt-3 flex items-center gap-3">
-                <div className="p-2 bg-white rounded-xl border border-neutral-200">
-                  <QrCode className="w-10 h-10 text-[#080512]" />
+                <div className="p-2 bg-white rounded-xl border border-[var(--color-border-main)]">
+                  <QrCode className="w-10 h-10 text-[var(--color-text-main)]" />
                 </div>
                 <div className="text-xs">
-                  <div className="font-bold text-[#080512]">{fullName || 'Verified Guest'}</div>
-                  <div className="text-neutral-600 text-[11px]">Valid at Indiranagar Club</div>
-                  <div className="text-emerald-700 font-semibold text-[10px]">Active for 14 Days</div>
+                  <div className="font-bold text-[var(--color-text-main)]">{fullName || 'Verified Guest'}</div>
+                  <div className="text-neutral-600 text-xs">Valid at Indiranagar Club</div>
+                  <div className="text-emerald-700 font-semibold text-xs">Active for 14 Days</div>
                 </div>
               </div>
             </div>
 
             <button
               onClick={handleResetAndClose}
-              className="px-6 py-2.5 rounded-full bg-[#080512] text-white text-xs font-bold hover:bg-neutral-800 transition-colors"
+              className="px-6 py-2.5 rounded-full bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors"
             >
               Done & Return to Site
             </button>

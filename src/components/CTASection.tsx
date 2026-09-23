@@ -7,11 +7,11 @@ interface CTASectionProps {
 
 export const CTASection: React.FC<CTASectionProps> = ({ onStartTrial }) => {
   return (
-    <section className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 relative overflow-hidden">
+    <section className="w-full px-4 md:px-8 lg:px-12 py-16 sm:py-24 relative overflow-hidden">
       <div className="max-w-7xl mx-auto">
         
         {/* Large Rounded Container with Purple/Pink Gradient Background */}
-        <div className="relative rounded-[36px] sm:rounded-[44px] bg-gradient-to-br from-[#200e3b] via-[#3b1c6e] to-[#6d28d9] p-8 sm:p-14 lg:p-20 text-white overflow-hidden shadow-2xl">
+        <div className="relative rounded-[36px] sm:rounded-[44px] bg-gradient-to-br from-[#200e3b] via-[#3b1c6e] to-[#6d28d9] p-8 sm:p-14 lg:p-20 text-white overflow-hidden shadow-sm">
           
           {/* Ambient Lighting & Glow Blobs */}
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-pink-500/30 blur-3xl pointer-events-none" />
@@ -37,7 +37,7 @@ export const CTASection: React.FC<CTASectionProps> = ({ onStartTrial }) => {
             </div>
 
             {/* Headline */}
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
+            <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Your Strongest Version Starts Today.
             </h2>
 
@@ -47,14 +47,14 @@ export const CTASection: React.FC<CTASectionProps> = ({ onStartTrial }) => {
             </p>
 
             {/* Action CTA */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 mb-10">
               <button
                 onClick={onStartTrial}
                 id="cta-start-free-trial-btn"
-                className="group inline-flex items-center justify-center gap-3 px-9 py-4 rounded-full text-base font-bold text-[#080512] bg-white hover:bg-neutral-100 shadow-xl active:scale-[0.98] transition-all duration-200"
+                className="group inline-flex items-center justify-center gap-3 px-9 py-4 rounded-full text-base font-bold text-[var(--color-text-main)] bg-white hover:bg-neutral-100 shadow-sm active:scale-[0.98] transition-all duration-200"
               >
                 <span>Start Your Free Trial</span>
-                <ArrowRight className="w-4 h-4 text-purple-700 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-[var(--color-text-main)] group-hover:translate-x-1 transition-transform" />
               </button>
 
               <a
@@ -66,7 +66,7 @@ export const CTASection: React.FC<CTASectionProps> = ({ onStartTrial }) => {
             </div>
 
             {/* Trust Perks */}
-            <div className="pt-6 border-t border-white/15 flex flex-wrap items-center gap-6 sm:gap-10 text-xs sm:text-sm text-purple-200">
+            <div className="pt-6 border-t border-white/15 flex flex-wrap items-center gap-8 sm:gap-10 text-xs sm:text-sm text-purple-200">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
                 <span>14-day free trial</span>

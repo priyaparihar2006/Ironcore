@@ -34,16 +34,16 @@ export const FeaturesSection: React.FC = () => {
   const activeFeature = FEATURES.find(f => f.id === activeFeatureId) || FEATURES[0];
 
   return (
-    <section id="features" className="w-full px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-gradient-to-b from-[#F8F7FA] via-white to-[#F8F7FA] relative">
+    <section id="features" className="w-full px-4 md:px-8 lg:px-12 py-16 sm:py-24 bg-gradient-to-b from-[#F8F7FA] via-white to-[#F8F7FA] relative">
       <div className="max-w-7xl mx-auto">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 border border-purple-200/60 text-xs font-semibold text-purple-800 mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--color-brand-bg)] border border-[var(--color-border-main)]/60 text-xs font-semibold text-purple-800 mb-3">
             <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             <span>Complete Gym & Member Ecosystem</span>
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#080512] tracking-tight mb-4">
+          <h2 className="font-display text-3xl sm:text-3xl lg:text-5xl font-bold text-[var(--color-text-main)] tracking-tight mb-4">
             Everything Your Fitness Journey Needs
           </h2>
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
@@ -52,30 +52,30 @@ export const FeaturesSection: React.FC = () => {
         </div>
 
         {/* 8 Feature Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {FEATURES.map((feature) => {
             const isSelected = feature.id === activeFeatureId;
             return (
               <div
                 key={feature.id}
                 onClick={() => setActiveFeatureId(feature.id)}
-                className={`group cursor-pointer rounded-[24px] p-6 sm:p-7 border transition-all duration-300 flex flex-col justify-between ${
+                className={`group cursor-pointer rounded-lg p-8 sm:p-7 border transition-all duration-300 flex flex-col justify-between ${
                   isSelected
                     ? 'bg-white border-purple-400/90 shadow-[0_12px_30px_-10px_rgba(109,40,217,0.12)] ring-2 ring-purple-500/10'
-                    : 'bg-white/80 hover:bg-white border-neutral-200/70 hover:border-purple-200 shadow-xs hover:shadow-md'
+                    : 'bg-white/80 hover:bg-white border-[var(--color-border-main)]/70 hover:border-[var(--color-border-main)] shadow-xs hover:shadow-sm'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100/90 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <div className="w-12 h-12 rounded-lg bg-neutral-100/90 flex items-center justify-center group-hover:scale-105 transition-transform">
                       {getIcon(feature.iconName)}
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">
+                    <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-[var(--color-brand-bg)] text-[var(--color-text-main)]">
                       {feature.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-[#080512] mb-2 group-hover:text-purple-700 transition-colors">
+                  <h3 className="text-lg font-bold text-[var(--color-text-main)] mb-2 group-hover:text-[var(--color-text-main)] transition-colors">
                     {feature.title}
                   </h3>
 
@@ -86,10 +86,10 @@ export const FeaturesSection: React.FC = () => {
 
                 <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-extrabold text-[#080512] block">
+                    <span className="text-xs font-bold text-[var(--color-text-main)] block">
                       {feature.metric}
                     </span>
-                    <span className="text-[10px] text-neutral-600 block">
+                    <span className="text-xs text-neutral-600 block">
                       {feature.metricLabel}
                     </span>
                   </div>
@@ -103,7 +103,7 @@ export const FeaturesSection: React.FC = () => {
         </div>
 
         {/* Dynamic Detail Spotlight Banner */}
-        <div className="mt-10 rounded-[28px] bg-gradient-to-r from-[#080512] via-[#1a1233] to-[#2e1d52] p-6 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-10 rounded-[28px] bg-gradient-to-r from-[#080512] via-[#1a1233] to-[#2e1d52] p-8 sm:p-10 text-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-purple-200 mb-3 backdrop-blur-sm">
               <span>Deep-Dive Spotlight:</span>
@@ -118,9 +118,9 @@ export const FeaturesSection: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <div className="px-5 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-center w-full sm:w-auto">
-              <span className="text-2xl font-extrabold text-purple-200 block">{activeFeature.metric}</span>
-              <span className="text-[10px] text-neutral-300 uppercase tracking-wider font-semibold">{activeFeature.metricLabel}</span>
+            <div className="px-5 py-3 rounded-lg bg-white/10 backdrop-blur-md border border-white/10 text-center w-full sm:w-auto">
+              <span className="text-2xl font-bold text-purple-200 block">{activeFeature.metric}</span>
+              <span className="text-xs text-neutral-300 uppercase tracking-wider font-semibold">{activeFeature.metricLabel}</span>
             </div>
           </div>
         </div>

@@ -1,24 +1,117 @@
 @import "tailwindcss";
 
+@theme {
+  /* Dashboard spacing: 8px rhythm with 4px and 12px optical steps. */
+  --spacing-tiny: 4px;
+  --spacing-tight: 8px;
+  --spacing-small: 12px;
+  --spacing-standard: 16px;
+  --spacing-card: 24px;
+  --spacing-section: 32px;
+  --spacing-large: 40px;
+  --spacing-major: 48px;
+  --spacing-page: 64px;
+  --font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  --color-primary: #B7F34A;
+  --color-brand-bg: #F6F7F9;
+  --color-card-bg: #FFFFFF;
+  --color-text-main: #17191C;
+  --color-text-muted: #6B7280;
+  --color-border-main: #E7E9ED;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer components {
+  .dashboard-shell {
+    --sidebar-width: 256px;
+    --sidebar-collapsed-width: 80px;
+    --topbar-height: 68px;
+    /* Explicit layout exception requested for the main content top inset. */
+    --content-top: 28px;
+  }
+  .dashboard-sidebar {
+    display: none;
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: var(--spacing-standard);
+    padding: var(--spacing-standard);
+    height: 100dvh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    background: white;
+    border-right: 1px solid var(--color-border-main);
+    z-index: 30;
+  }
+  .dashboard-sidebar[data-collapsed='true'] { width: var(--sidebar-collapsed-width); }
+  .sidebar-toggle { width: 48px; height: 40px; flex-shrink: 0; }
+  .dashboard-nav { display: flex; flex-direction: column; gap: var(--spacing-card); }
+  .dashboard-nav-group { display: flex; flex-direction: column; gap: var(--spacing-tight); }
+  .dashboard-nav-heading {
+    padding-inline: var(--spacing-small);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .dashboard-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-small);
+    padding-inline: var(--spacing-small);
+    min-height: 42px;
+    border-radius: 9px;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .dashboard-sidebar[data-collapsed='true'] .dashboard-nav-link { justify-content: center; padding-inline: 0; border-left: none; }
+  .dashboard-topbar {
+    height: var(--topbar-height);
+    min-height: var(--topbar-height);
+    padding: 0 var(--spacing-standard);
+    gap: var(--spacing-standard);
+  }
+  .dashboard-content {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding: var(--spacing-card) var(--spacing-standard) var(--spacing-large);
+  }
+  .dashboard-content > :first-child { min-width: 0; }
+  @media (min-width: 1024px) {
+    .dashboard-sidebar { display: flex; }
+    .dashboard-topbar { padding-inline: var(--spacing-section); }
+    .dashboard-content { padding: var(--content-top) var(--spacing-section) var(--spacing-large); }
+  }
+}
+
 @layer base {
-  :root {
-    /* Apple/iOS system font stack — resolves to San Francisco on iOS/macOS
-       (via -apple-system / BlinkMacSystemFont), and falls back gracefully on
-       Windows/Android/Linux, where none of the Apple-only keywords or the
-       literal "SF Pro..." names match anything installed. Single source of
-       truth so body and heading rules below never duplicate the list. */
-    --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  }
-
   body {
-    font-family: var(--font-system);
-    background-color: #F8F7FA;
-    color: #080512;
+    font-family: var(--font-sans);
+    background-color: var(--color-brand-bg);
+    color: var(--color-text-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, .font-display {
-    font-family: var(--font-system);
-    letter-spacing: -0.04em;
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 }
 

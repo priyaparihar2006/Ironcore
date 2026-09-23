@@ -11,10 +11,10 @@ import type {
   DietPlan,
 } from '../../health';
 
-const inputClass = 'w-full mt-1 rounded-xl border border-neutral-200 bg-white p-3 text-sm';
+const inputClass = 'w-full mt-1 rounded-xl border border-[var(--color-border-main)] bg-white p-3 text-sm';
 const buttonClass =
-  'rounded-xl bg-[#080512] px-5 py-3 text-sm font-bold text-white disabled:opacity-40 hover:bg-purple-900';
-const cardClass = 'rounded-3xl border border-neutral-200 bg-white p-6 space-y-4';
+  'rounded-xl bg-black px-6 py-3 text-sm font-bold text-white disabled:opacity-40 hover:bg-purple-900';
+const cardClass = 'rounded-3xl border border-[var(--color-border-main)] bg-white p-card space-y-4';
 const defaults: HealthPreferences = {
   dateOfBirth: '',
   formulaSex: 'unspecified',
@@ -102,16 +102,16 @@ export function UserHealthPage() {
   );
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-[#080512] p-6 sm:p-8 text-white">
+      <header className="rounded-3xl bg-black p-card sm:p-card text-white">
         <div className="flex items-center gap-2 text-purple-300 text-sm font-bold">
           <Sparkles size={18} /> YOUR WELLNESS COMPANION
         </div>
-        <h1 className="text-3xl font-black mt-3">Understand your needs.</h1>
+        <h1 className="text-3xl font-bold mt-3">Understand your needs.</h1>
         <p className="text-neutral-300 mt-2 max-w-2xl">
           Personal estimates, thoughtful meal choices and a clearer view of your progress. You stay
           in control of every change.
         </p>
-        <div className="flex flex-wrap gap-3 mt-5 text-xs">
+        <div className="flex flex-wrap gap-3 mt-6 text-xs">
           <span className="rounded-full bg-white/10 px-3 py-2">Calculations work without AI</span>
           <span className="rounded-full bg-white/10 px-3 py-2">
             {data?.aiAvailable ? 'AI connected' : 'AI awaiting server configuration'}
@@ -119,7 +119,7 @@ export function UserHealthPage() {
         </div>
       </header>
       {error && (
-        <div role="alert" className="rounded-2xl bg-red-50 p-4 text-red-800">
+        <div role="alert" className="rounded-lg bg-red-50 p-card text-red-800">
           {error}{' '}
           {!data && (
             <button className="underline ml-2" onClick={() => run('load', () => refresh(true))}>
@@ -129,26 +129,26 @@ export function UserHealthPage() {
         </div>
       )}
       {notice && (
-        <p role="status" className="rounded-2xl bg-emerald-50 p-4 text-emerald-900">
+        <p role="status" className="rounded-lg bg-emerald-50 p-card text-emerald-900">
           {notice}
         </p>
       )}
       {!data && !error && <p role="status">Loading your health profile…</p>}
       {data && (
         <>
-          <div className="grid gap-6 xl:grid-cols-2">
+          <div className="grid gap-8 xl:grid-cols-2">
             <form onSubmit={save} className={cardClass}>
-              <h2 className="text-xl font-black flex items-center gap-2">
+              <h2 className="text-xl font-bold flex items-center gap-2">
                 <ShieldCheck size={21} /> Your health preferences
               </h2>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-[var(--color-text-muted)]">
                 Height and weight come from your{' '}
-                <Link to="/dashboard/profile" className="text-purple-700 underline">
+                <Link to="/dashboard/profile" className="text-[var(--color-text-main)] underline">
                   fitness profile
                 </Link>
                 . Keep them current for useful estimates.
               </p>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-6">
                 <label className="text-sm font-semibold">
                   Date of birth
                   <input
@@ -238,7 +238,7 @@ export function UserHealthPage() {
                   />
                 </label>
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 The energy equation uses a physiological input separate from gender identity. If you
                 prefer not to provide it, manual tracking remains available.
               </p>
@@ -247,7 +247,7 @@ export function UserHealthPage() {
                 ['general', 'None of the situations below applies'],
                 ['review', 'One applies / I need professional review'],
               ])}
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Select professional review for pregnancy, breastfeeding, eating-disorder concerns,
                 or a condition requiring a therapeutic diet. Automated targets support adults aged
                 20+.
@@ -260,8 +260,9 @@ export function UserHealthPage() {
                   onChange={(e) => update('aiConsent', e.target.checked)}
                 />
                 <span>
-                  I agree to send meal descriptions, diet preferences or report metrics to OpenAI
-                  when I request AI features. My name and email are excluded. I can withdraw this
+                  I agree to send meal descriptions, diet preferences or report metrics to the
+                  configured AI provider{data?.aiProviderHost ? ` (${data.aiProviderHost})` : ''}
+                  {' '}when I request AI features. My name and email are excluded. I can withdraw this
                   consent here.
                 </span>
               </label>
@@ -270,10 +271,10 @@ export function UserHealthPage() {
               </button>
             </form>
             <section className={cardClass}>
-              <h2 className="text-xl font-black flex gap-2 items-center">
+              <h2 className="text-xl font-bold flex gap-2 items-center">
                 <Activity size={21} /> Your estimated needs
               </h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 {[
                   [estimate?.bmi?.toFixed(1) || '—', 'BMI'],
                   [estimate?.restingCalories || '—', 'Resting kcal/day'],
@@ -283,14 +284,14 @@ export function UserHealthPage() {
                     'Accepted daily kcal',
                   ],
                 ].map(([value, label]) => (
-                  <div key={label} className="rounded-2xl bg-neutral-50 p-4">
-                    <p className="text-xs text-neutral-500">{label}</p>
-                    <p className="text-2xl font-black mt-1">{value}</p>
+                  <div key={label} className="rounded-lg bg-[var(--color-brand-bg)] p-card">
+                    <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+                    <p className="text-2xl font-bold mt-1">{value}</p>
                   </div>
                 ))}
               </div>
               {estimate?.category && (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-[var(--color-text-muted)]">
                   BMI screening category: {estimate.category}
                 </p>
               )}
@@ -317,9 +318,9 @@ export function UserHealthPage() {
                 {busy === 'estimate' ? 'Calculating…' : 'Calculate my estimates'}
               </button>
               {target && (
-                <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4 space-y-3">
+                <div className="rounded-lg border border-[var(--color-border-main)] bg-[var(--color-brand-bg)] p-card space-y-3">
                   <h3 className="font-bold">Proposed daily targets</h3>
-                  <p className="text-2xl font-black">
+                  <p className="text-2xl font-bold">
                     {target.dailyCalorieTarget} <span className="text-sm font-normal">kcal</span>
                   </p>
                   <p className="text-sm">
@@ -358,12 +359,12 @@ export function UserHealthPage() {
                   )}
                 </div>
               )}
-              <ul className="list-disc pl-5 text-xs text-neutral-500 space-y-2">
+              <ul className="list-disc pl-6 text-xs text-[var(--color-text-muted)] space-y-2">
                 {estimate?.assumptions.map((a) => (
                   <li key={a}>{a}</li>
                 ))}
               </ul>
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-[var(--color-text-muted)]">
                 Based on the{' '}
                 <a
                   className="underline"
@@ -378,12 +379,12 @@ export function UserHealthPage() {
             </section>
           </div>
           <section className={cardClass}>
-            <h2 className="text-xl font-black flex gap-2 items-center">
+            <h2 className="text-xl font-bold flex gap-2 items-center">
               <Sparkles size={21} /> A day of meal ideas
             </h2>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-[var(--color-text-muted)]">
               Start by confirming at least three different database foods on the{' '}
-              <Link className="underline text-purple-700" to="/dashboard/nutrition">
+              <Link className="underline text-[var(--color-text-main)]" to="/dashboard/nutrition">
                 nutrition page
               </Link>
               . Plans reuse those foods and recalculate the totals. Allergy-specific plans need
@@ -408,9 +409,9 @@ export function UserHealthPage() {
             </button>
             {plan && (
               <>
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-3 gap-6">
                   {plan.meals.map((meal, i) => (
-                    <article className="bg-neutral-50 p-4 rounded-2xl" key={i}>
+                    <article className="bg-[var(--color-brand-bg)] p-card rounded-lg" key={i}>
                       <h3 className="font-bold">{meal.name}</h3>
                       <ul className="mt-3 space-y-2 text-sm">
                         {meal.portions.map((p, j) => (
@@ -428,11 +429,11 @@ export function UserHealthPage() {
                   {plan.totals.carbsGrams} g · Fat {plan.totals.fatsGrams} g
                 </p>
                 {plan.notes.map((n) => (
-                  <p className="text-xs text-neutral-500" key={n}>
+                  <p className="text-xs text-[var(--color-text-muted)]" key={n}>
                     {n}
                   </p>
                 ))}
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-[var(--color-text-muted)]">
                   Generated {new Date(plan.createdAt).toLocaleString()}. Check that your targets and
                   preferences are still current.
                 </p>
@@ -440,7 +441,7 @@ export function UserHealthPage() {
             )}
           </section>
           <section className={cardClass + ' health-report'}>
-            <h2 className="text-xl font-black flex gap-2 items-center">
+            <h2 className="text-xl font-bold flex gap-2 items-center">
               <FileText size={21} /> Your progress report
             </h2>
             <div className="flex flex-wrap gap-3">
@@ -472,7 +473,7 @@ export function UserHealthPage() {
             </div>
             {report && (
               <div className="space-y-4">
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-[var(--color-text-muted)]">
                   {report.start} – {report.end} · {report.timezone} ·{' '}
                   {report.source === 'ai'
                     ? 'Calculated metrics with AI observations'
@@ -494,13 +495,13 @@ export function UserHealthPage() {
                       'Recorded weight change',
                     ],
                   ].map(([value, label]) => (
-                    <div className="rounded-2xl bg-neutral-50 p-4" key={label}>
-                      <p className="text-xs text-neutral-500">{label}</p>
-                      <p className="text-xl font-black mt-1">{value}</p>
+                    <div className="rounded-lg bg-[var(--color-brand-bg)] p-card" key={label}>
+                      <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+                      <p className="text-xl font-bold mt-1">{value}</p>
                     </div>
                   ))}
                 </div>
-                <ul className="space-y-2 text-sm list-disc pl-5">
+                <ul className="space-y-2 text-sm list-disc pl-6">
                   {report.commentary.map((c, i) => (
                     <li key={i}>{c}</li>
                   ))}
@@ -534,11 +535,11 @@ export function UserHealthPage() {
           </section>
           <section className={cardClass}>
             <h2 className="font-bold">Your data controls</h2>
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-[var(--color-text-muted)]">
               Export your records, or remove health preferences and AI artifacts. Existing meal and
               progress logs are retained when health preferences are removed.
             </p>
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-6 flex-wrap">
               <button
                 className="text-sm underline flex gap-2 items-center"
                 disabled={!!busy}
