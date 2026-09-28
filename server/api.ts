@@ -940,14 +940,23 @@ apiRouter.get(
     );
     const upcomingSessions = trainerBookings.filter((b) => b.status === 'CONFIRMED');
     const completedSessions = trainerBookings.filter((b) => b.status === 'COMPLETED');
+    // Templates in this trainer's library. ADMIN (viewing as a trainer) sees the
+    // full shared vault, same as GET /trainer/workouts.
+    const totalPlansCount = db.workoutPlans.filter(
+      (w) => w.createdByTrainerId === trainerId || req.user!.role === 'ADMIN'
+    ).length;
 
+    // Field names match what TrainerOverviewPage's KpiCards read
+    // (assignedClientsCount, totalPlansCount) — previously this returned
+    // totalClients/activeClients instead, so those cards always rendered blank.
     res.json({
       stats: {
-        totalClients: trainerClients.length,
-        activeClients: trainerClients.filter((c) => c.status === 'ACTIVE').length,
+        assignedClientsCount: trainerClients.length,
+        activeClientsCount: trainerClients.filter((c) => c.status === 'ACTIVE').length,
         todaySessionsCount: todaySessions.length,
         upcomingSessionsCount: upcomingSessions.length,
         completedSessionsCount: completedSessions.length,
+        totalPlansCount,
       },
       todaySessions,
       upcomingSessions,

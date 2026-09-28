@@ -1,3 +1,5 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Card } from '../../components/dashboard/Card';
 import { ValidationInput, ValidationSelect, useFormValidation } from '../../components/ValidationInput';
 import { nameError, phoneError, passwordError, confirmPasswordError, weightError, numberError, choiceError, FITNESS_GOALS as VALID_GOALS, GENDERS, normalizePhone } from '../../lib/validation';
 import React, { useState, useEffect, useRef } from 'react';
@@ -6,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { resolveAvatarUrl, validateAvatarFile, compressAvatarToDataUrl } from '../../lib/avatar';
 import { isFitnessProfileComplete } from '../../lib/profile';
+import { UserMembershipData } from '../../types';
 
 const FITNESS_GOALS = [
   'Weight Loss',
@@ -57,6 +60,16 @@ export const UserProfilePage: React.FC = () => {
   const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const profileComplete = isFitnessProfileComplete(profile);
+
+  // Membership tier for the profile hero card — best-effort; the hero still
+  // renders (as "Member") if this fails, so one failed request doesn't block
+  // the whole page.
+  const [membership, setMembership] = useState<UserMembershipData | null>(null);
+  useEffect(() => {
+    apiRequest<{ membership: UserMembershipData | null }>('/user/membership')
+      .then((res) => setMembership(res.membership))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     // Identity fields live on the User record.
@@ -200,14 +213,133 @@ export const UserProfilePage: React.FC = () => {
   return (
     <div className="space-y-section max-w-5xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Athlete Profile & Biometrics
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Manage your personal identity, demographic details, body composition targets, and security credentials.
-        </p>
+      <PageHeader title="Profile" subtitle="Manage your details, body targets and security." />
+
+      {/* Hero: identity at a glance — avatar, name, membership tier, tenure. */}
+      <div className="card flex flex-col sm:flex-row sm:items-center gap-6">
+        <div className="relative w-24 h-24 flex-shrink-0">
+          <img
+            src={pendingAvatarPreview || resolveAvatarUrl(user)}
+            alt={name}
+            referrerPolicy="no-referrer"
+            className="w-24 h-24 rounded-full object-cover border border-[var(--color-border-main)] shadow-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setAvatarMenuOpen((v) => !v)}
+            aria-label="Change profile photo"
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[var(--color-primary)] text-[var(--color-text-main)] flex items-center justify-center border-2 border-white shadow-sm hover:bg-neutral-800 transition-colors cursor-pointer"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+
+          {avatarMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 w-56 bg-[var(--color-card-bg)] rounded-lg shadow-sm border border-[var(--color-border-main)]/80 p-2 z-20">
+              <div className="px-3 pt-2 pb-1 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                Change Profile Photo
+              </div>
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-[var(--color-text-main)] hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                <Camera className="w-4 h-4 text-purple-600" />
+                Take Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-[var(--color-text-main)] hover:bg-neutral-100 transition-colors cursor-pointer"
+              >
+                <ImageIcon className="w-4 h-4 text-purple-600" />
+                Choose from Gallery
+              </button>
+            </div>
+          )}
+
+          {/* `capture` opens the device camera directly on mobile browsers that
+              support it (Android/iOS Safari); browsers without support just fall
+              back to a normal file picker, so nothing breaks either way. Camera
+              access is only ever requested when the user taps "Take Photo". */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            onChange={handleAvatarFileSelected}
+            className="hidden"
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleAvatarFileSelected}
+            className="hidden"
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-bold text-[var(--color-text-main)] truncate">{user?.name}</h2>
+          <p className="text-sm font-semibold text-purple-700">{membership ? `${membership.planName} Member` : 'Member'}</p>
+          {user?.joinedDate && (
+            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+              Member since {new Date(user.joinedDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
+          )}
+
+          {avatarError && (
+            <p className="text-xs font-bold text-red-600 mt-2 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {avatarError}
+            </p>
+          )}
+          {avatarSuccess && (
+            <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {avatarSuccess}
+            </p>
+          )}
+          {pendingAvatarPreview && (
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                type="button"
+                onClick={handleSaveAvatar}
+                disabled={avatarSaving}
+                className="btn btn-primary !h-9 !px-4 text-xs"
+              >
+                {avatarSaving ? 'Saving...' : 'Save Photo'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelAvatarPreview}
+                disabled={avatarSaving}
+                className="btn btn-secondary !h-9 !px-4 text-xs"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Overview: the numbers a trainer would ask for first. */}
+      <Card title="Overview">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {[
+            ['Weight', profile ? `${profile.currentWeight} kg` : '—'],
+            ['Height', profile ? `${profile.height} cm` : '—'],
+            ['BMI', profile && profile.currentWeight && profile.height
+              ? (profile.currentWeight / (profile.height / 100) ** 2).toFixed(1)
+              : '—'],
+            ['Goal', user?.fitnessGoal || '—'],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <div className="text-xl font-bold text-[var(--color-text-main)] truncate">{value}</div>
+              <div className="text-xs text-[var(--color-text-muted)] mt-0.5">{label}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       {profileMsg && (
         <div className={`p-card rounded-lg text-xs font-bold flex items-center gap-2 ${
@@ -220,117 +352,13 @@ export const UserProfilePage: React.FC = () => {
 
       {/* Main Profile Form */}
       <form noValidate onSubmit={handleSaveProfile} className="space-y-section">
-        
-        {/* Section 1: Identity & Avatar */}
-        <div className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm space-y-6">
+
+        {/* Section 1: Identity */}
+        <div className="card space-y-6">
           <h2 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
             <User className="w-5 h-5 text-purple-600" />
             General Information
           </h2>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-8 pb-6 border-b border-neutral-100">
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <img
-                src={pendingAvatarPreview || resolveAvatarUrl(user)}
-                alt={name}
-                referrerPolicy="no-referrer"
-                className="w-20 h-20 rounded-lg object-cover border border-[var(--color-border-main)] shadow-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setAvatarMenuOpen((v) => !v)}
-                aria-label="Change profile photo"
-                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[var(--color-primary)] text-[var(--color-text-main)] flex items-center justify-center border-2 border-white shadow-sm hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-
-              {avatarMenuOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-sm border border-[var(--color-border-main)]/80 p-2 z-20">
-                  <div className="px-3 pt-2 pb-1 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
-                    Change Profile Photo
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-[var(--color-text-main)] hover:bg-neutral-100 transition-colors cursor-pointer"
-                  >
-                    <Camera className="w-4 h-4 text-purple-600" />
-                    Take Photo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => galleryInputRef.current?.click()}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-bold text-[var(--color-text-main)] hover:bg-neutral-100 transition-colors cursor-pointer"
-                  >
-                    <ImageIcon className="w-4 h-4 text-purple-600" />
-                    Choose from Gallery
-                  </button>
-                </div>
-              )}
-
-              {/* `capture` opens the device camera directly on mobile browsers that
-                  support it (Android/iOS Safari); browsers without support just fall
-                  back to a normal file picker, so nothing breaks either way. Camera
-                  access is only ever requested when the user taps "Take Photo". */}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="environment"
-                onChange={handleAvatarFileSelected}
-                className="hidden"
-              />
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleAvatarFileSelected}
-                className="hidden"
-              />
-            </div>
-
-            <div className="flex-1">
-              <div className="text-xs font-bold text-[var(--color-text-main)] mb-1">Profile Photo</div>
-              <p className="text-xs text-[var(--color-text-muted)]">
-                JPG, PNG, or WEBP — max 5MB. Tap the pencil icon to take a new photo or choose one from your gallery.
-              </p>
-
-              {avatarError && (
-                <p className="text-xs font-bold text-red-600 mt-2 flex items-center gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                  {avatarError}
-                </p>
-              )}
-              {avatarSuccess && (
-                <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  {avatarSuccess}
-                </p>
-              )}
-
-              {pendingAvatarPreview && (
-                <div className="flex items-center gap-2 mt-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveAvatar}
-                    disabled={avatarSaving}
-                    className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {avatarSaving ? 'Saving...' : 'Save Photo'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelAvatarPreview}
-                    disabled={avatarSaving}
-                    className="px-4 py-2 rounded-xl border border-[var(--color-border-main)] text-neutral-600 text-xs font-bold hover:bg-[var(--color-brand-bg)] transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
@@ -405,7 +433,7 @@ export const UserProfilePage: React.FC = () => {
         </div>
 
         {/* Section 2: Body Biometrics */}
-        <div className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm space-y-6">
+        <div className="card space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
               <Target className="w-5 h-5 text-emerald-600" />
@@ -496,7 +524,7 @@ export const UserProfilePage: React.FC = () => {
       </form>
 
       {/* Section 3: Password & Security */}
-      <div className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm space-y-6">
+      <div className="card space-y-6">
         <h2 className="text-lg font-bold text-[var(--color-text-main)] flex items-center gap-2">
           <Shield className="w-5 h-5 text-[var(--color-text-main)]" />
           Security & Password Change

@@ -1,3 +1,6 @@
+import { KpiCard } from '../../components/dashboard/KpiCard';
+import { LineChart } from '../../components/charts/LineChart';
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import { ValidationInput, useFormValidation } from '../../components/ValidationInput';
 import { weightError, numberError } from '../../lib/validation';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -124,27 +127,24 @@ export const UserProgressPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            Body Composition & Progress
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Track weight trendlines, strength evolution, step counts, and caloric expenditure over time.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            resetForm();
-            setShowModal(true);
-          }}
-          className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-sm shadow-purple-950/5"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Log Progress Entry</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Progress"
+        subtitle="Track weight, strength, steps and calories over time."
+        actions={
+          <>
+            <button
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
+              className="btn btn-primary"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Log Progress Entry</span>
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-section animate-pulse">
@@ -169,7 +169,7 @@ export const UserProgressPage: React.FC = () => {
           </button>
         </div>
       ) : sorted.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white border border-[var(--color-border-main)] text-center">
+        <div className="card p-12 text-center">
           <TrendingUp className="w-12 h-12 mx-auto text-neutral-300 mb-3" />
           <h3 className="text-lg font-bold text-[var(--color-text-main)]">No progress data yet</h3>
           <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto mt-1">
@@ -179,123 +179,51 @@ export const UserProgressPage: React.FC = () => {
       ) : (
         <>
           {/* Metric Cards Summary */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-              <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-                <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Current Weight</span>
-                <Scale className="w-4 h-4 text-purple-600" />
-              </div>
-              <div className="text-2xl font-bold text-[var(--color-text-main)]">
-                {latestRecord.weightKg} kg
-              </div>
-              <div
-                className={`text-xs font-bold mt-1 ${
-                  weightDelta === null
-                    ? 'text-[var(--color-text-muted)]'
-                    : weightDelta < 0
-                    ? 'text-emerald-600'
-                    : weightDelta > 0
-                    ? 'text-orange-600'
-                    : 'text-[var(--color-text-muted)]'
-                }`}
-              >
-                {weightDelta === null
+          <div className="kpi-grid">
+            <KpiCard
+              label="Current Weight"
+              value={latestRecord.weightKg}
+              unit="kg"
+              support={
+                weightDelta === null
                   ? 'First entry logged'
                   : weightDelta === 0
                   ? 'No change overall'
-                  : `${weightDelta < 0 ? '↓' : '↑'} ${weightDelta > 0 ? '+' : ''}${weightDelta} kg overall`}
-              </div>
-            </div>
-
-            <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-              <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-                <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Strength Index</span>
-                <Zap className="w-4 h-4 text-amber-500" />
-              </div>
-              <div className="text-2xl font-bold text-[var(--color-text-main)]">
-                {latestRecord.strengthScore} <span className="text-xs text-[var(--color-text-muted)]">/ 100</span>
-              </div>
-              <div className="text-xs font-bold text-[var(--color-text-muted)] mt-1">
-                Latest recorded score
-              </div>
-            </div>
-
-            <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-              <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-                <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Avg Daily Steps</span>
-                <Footprints className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div className="text-2xl font-bold text-[var(--color-text-main)]">
-                {avgSteps !== null ? avgSteps.toLocaleString() : '—'}
-              </div>
-              <div className="text-xs font-bold text-[var(--color-text-muted)] mt-1">
-                Across {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
-              </div>
-            </div>
-
-            <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-              <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-                <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Avg Burn Rate</span>
-                <Flame className="w-4 h-4 text-orange-500" />
-              </div>
-              <div className="text-2xl font-bold text-[var(--color-text-main)]">
-                {avgCalories !== null ? avgCalories.toLocaleString() : '—'} kcal
-              </div>
-              <div className="text-xs font-bold text-[var(--color-text-muted)] mt-1">
-                Across {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
-              </div>
-            </div>
+                  : `${weightDelta < 0 ? '↓' : '↑'} ${Math.abs(weightDelta)} kg overall`
+              }
+              tone={weightDelta === null || weightDelta === 0 ? 'neutral' : weightDelta < 0 ? 'positive' : 'negative'}
+            />
+            <KpiCard label="Strength Index" value={latestRecord.strengthScore} unit="/ 100" support="Latest recorded score" />
+            <KpiCard
+              label="Avg Daily Steps"
+              value={avgSteps !== null ? avgSteps.toLocaleString() : '—'}
+              support={`Across ${sorted.length} ${sorted.length === 1 ? 'entry' : 'entries'}`}
+            />
+            <KpiCard
+              label="Avg Burn Rate"
+              value={avgCalories !== null ? avgCalories.toLocaleString() : '—'}
+              unit="kcal"
+              support={`Across ${sorted.length} ${sorted.length === 1 ? 'entry' : 'entries'}`}
+            />
           </div>
 
           {/* Visual Weight Trend Visualization */}
-          <div className="bg-white p-card sm:p-card rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm">
+          <div className="card">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-bold text-[var(--color-text-main)]">Weight Trend Curve</h2>
+                <h2 className="text-lg font-bold text-[var(--color-text-main)]">Weight Trend</h2>
                 <p className="text-xs text-[var(--color-text-muted)] mt-1">Historical body mass progression</p>
               </div>
-              <div className="flex items-center gap-2 text-xs font-bold text-[var(--color-text-muted)]">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block"></span>
-                <span>Recorded Weight (kg)</span>
-              </div>
             </div>
 
-            {/* Dynamic SVG chart */}
-            <div className="h-48 w-full relative flex items-end pt-6 pb-2">
-              <div className="w-full flex items-end justify-between gap-2 sm:gap-6 h-36">
-                {sorted.map((r) => {
-                  const heightPercent =
-                    maxWeight === minWeight
-                      ? 50
-                      : Math.max(
-                          15,
-                          Math.min(
-                            100,
-                            ((r.weightKg - minWeight + 1) / (maxWeight - minWeight + 2)) * 100
-                          )
-                        );
-
-                  return (
-                    <div key={r.id} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                      <span className="text-xs font-bold text-[var(--color-text-main)] group-hover:scale-110 transition-transform">
-                        {r.weightKg}
-                      </span>
-                      <div className="w-full max-w-[48px] bg-purple-100 rounded-t-xl group-hover:bg-purple-600 transition-colors relative overflow-hidden"
-                           style={{ height: `${heightPercent}%` }}>
-                        <div className="absolute inset-x-0 top-0 h-1.5 bg-purple-700"></div>
-                      </div>
-                      <span className="text-xs font-medium text-[var(--color-text-muted)] truncate max-w-[50px]">
-                        {r.date.split('-').slice(1).join('/')}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <LineChart
+              data={sorted.map((r) => ({ label: r.date.split('-').slice(1).join('/'), value: r.weightKg }))}
+              unit=" kg"
+            />
           </div>
 
           {/* Progress History Table */}
-          <div className="bg-white rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm overflow-hidden">
+          <div className="card overflow-hidden !p-0">
             <div className="p-card border-b border-neutral-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recorded Progress Logs</h2>
               <span className="text-xs font-bold text-[var(--color-text-muted)]">{sorted.length} Entries</span>
@@ -342,7 +270,7 @@ export const UserProgressPage: React.FC = () => {
       {/* Log Progress Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[var(--color-text-main)]">Log Progress Entry</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">

@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, User, Plus, X, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -91,24 +92,21 @@ export const UserBookingsPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            Coaching & Trainer Bookings
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Reserve dedicated 1-on-1 athletic coaching, body composition evaluations, and biomechanics reviews.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-sm shadow-purple-950/5"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Book Session</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Bookings"
+        subtitle="Reserve 1-on-1 coaching and body composition evaluations."
+        actions={
+          <>
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn btn-primary"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Book Session</span>
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-4 animate-pulse">
@@ -126,7 +124,7 @@ export const UserBookingsPage: React.FC = () => {
             </h2>
 
             {upcomingBookings.length === 0 ? (
-              <div className="p-card rounded-3xl bg-white border border-[var(--color-border-main)] text-center">
+              <div className="card text-center">
                 <Calendar className="w-10 h-10 mx-auto text-neutral-300 mb-2" />
                 <p className="text-sm font-bold text-neutral-700">No upcoming sessions booked</p>
                 <p className="text-xs text-[var(--color-text-muted)] mt-1">Connect with our certified master coaches for targeted form evaluation.</p>
@@ -142,7 +140,7 @@ export const UserBookingsPage: React.FC = () => {
                 {upcomingBookings.map((b) => (
                   <div
                     key={b.id}
-                    className="bg-white rounded-[28px] p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
+                    className="card flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -154,7 +152,7 @@ export const UserBookingsPage: React.FC = () => {
                           disabled={cancellingId === b.id}
                           className="text-[var(--color-text-muted)] hover:text-red-600 text-xs flex items-center gap-1 cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                           <span>Cancel</span>
                         </button>
                       </div>
@@ -170,7 +168,7 @@ export const UserBookingsPage: React.FC = () => {
                           <span>{b.date}</span>
                         </div>
                         <div className="flex items-center gap-2 text-[var(--color-text-muted)] font-mono">
-                          <Clock className="w-3.5 h-3.5" />
+                          <Clock className="w-4 h-4" />
                           <span>{b.timeSlot}</span>
                         </div>
                       </div>
@@ -193,7 +191,7 @@ export const UserBookingsPage: React.FC = () => {
               <h2 className="text-base font-bold text-[var(--color-text-muted)] mb-4">
                 Completed & Past Sessions History
               </h2>
-              <div className="bg-white rounded-[28px] border border-[var(--color-border-main)]/80 overflow-hidden">
+              <div className="card overflow-hidden !p-0">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="bg-neutral-50/80 text-[var(--color-text-muted)] uppercase font-bold border-b border-neutral-100">
@@ -231,7 +229,7 @@ export const UserBookingsPage: React.FC = () => {
       {/* Book Session Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[var(--color-text-main)]">Schedule Coaching Session</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">

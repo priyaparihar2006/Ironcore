@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Check, ShieldCheck, Sparkles, AlertCircle, ArrowRight, CheckCircle2, CreditCard } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -132,14 +133,7 @@ export const UserMembershipPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Membership & Privileges
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Review your active gym tier, facility access credentials, billing schedule, and available upgrades.
-        </p>
-      </div>
+      <PageHeader title="Membership" subtitle="Your gym tier, access, billing schedule and upgrades." />
 
       {membership ? (
         /* Current Plan Hero Card */
@@ -149,7 +143,7 @@ export const UserMembershipPage: React.FC = () => {
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-purple-200 text-xs font-bold uppercase tracking-wider mb-3">
-                <ShieldCheck className={`w-3.5 h-3.5 ${STATUS_STYLES[effectiveStatus] || 'text-white'}`} />
+                <ShieldCheck className={`w-4 h-4 ${STATUS_STYLES[effectiveStatus] || 'text-white'}`} />
                 Status: {effectiveStatus}
               </div>
               <h2 className="text-3xl sm:text-3xl font-bold tracking-tighter text-white">
@@ -200,7 +194,7 @@ export const UserMembershipPage: React.FC = () => {
         </div>
       ) : (
         /* No membership on record */
-        <div className="bg-white rounded-lg p-card sm:p-10 border border-[var(--color-border-main)]/80 shadow-sm flex flex-col items-center text-center">
+        <div className="card sm:p-10 flex flex-col items-center text-center">
           <div className="w-14 h-14 rounded-lg bg-[var(--color-brand-bg)] text-purple-600 flex items-center justify-center mb-4">
             <CreditCard className="w-7 h-7" />
           </div>
@@ -249,7 +243,7 @@ export const UserMembershipPage: React.FC = () => {
         </div>
 
         {plans.length === 0 ? (
-          <div className="p-10 rounded-lg bg-white border border-[var(--color-border-main)]/80 text-center text-sm text-[var(--color-text-muted)]">
+          <div className="card p-10 text-center text-sm text-[var(--color-text-muted)]">
             No membership plans are available right now.
           </div>
         ) : (
@@ -315,7 +309,7 @@ export const UserMembershipPage: React.FC = () => {
                     ) : (
                       <>
                         <span>{membership ? `Switch to ${p.name}` : `Select ${p.name}`}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>

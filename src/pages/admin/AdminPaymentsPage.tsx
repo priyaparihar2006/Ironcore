@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { DollarSign, CreditCard, ArrowDownRight, CheckCircle2, Download } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -19,30 +20,27 @@ export const AdminPaymentsPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            Payment Ledger & Billing Invoices
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Reconcile recurring athletic subscriptions, upgrade invoices, and payment gateway receipts.
-          </p>
-        </div>
-
-        <div className="p-card rounded-lg bg-white border border-[var(--color-border-main)]/80 shadow-sm flex items-center gap-6 self-start sm:self-center">
-          <div>
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)] block">Total Processed</span>
-            <span className="text-xl font-bold text-emerald-700">${totalCollected.toLocaleString()}</span>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Payments"
+        subtitle="Reconcile subscriptions, upgrade invoices and payment receipts."
+        actions={
+          <>
+            <div className="card flex items-center gap-6 self-start sm:self-center">
+              <div>
+                <span className="text-xs font-bold uppercase text-[var(--color-text-muted)] block">Total Processed</span>
+                <span className="text-xl font-bold text-emerald-700">${totalCollected.toLocaleString()}</span>
+              </div>
+            </div>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-3 animate-pulse">
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm overflow-hidden">
+        <div className="card overflow-hidden !p-0">
           <div className="p-card border-b border-neutral-100 flex items-center justify-between">
             <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recorded Transactions</h2>
             <span className="text-xs font-bold text-[var(--color-text-muted)]">{payments.length} Records</span>
@@ -68,7 +66,7 @@ export const AdminPaymentsPage: React.FC = () => {
                     <td className="py-4 px-6 text-neutral-600">{p.date}</td>
                     <td className="py-4 px-6 font-bold text-emerald-700 font-mono">${p.amount.toFixed(2)}</td>
                     <td className="py-4 px-6 text-neutral-600 flex items-center gap-2">
-                      <CreditCard className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                      <CreditCard className="w-4 h-4 text-[var(--color-text-muted)]" />
                       <span>{p.paymentMethod}</span>
                     </td>
                     <td className="py-4 px-6">

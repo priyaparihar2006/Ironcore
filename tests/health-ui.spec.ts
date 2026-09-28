@@ -142,7 +142,7 @@ test('health onboarding, report and manual/AI meal confirmation work on desktop 
     await route.fulfill({ json: result });
   });
   await page.goto('/dashboard/health');
-  await expect(page.getByRole('heading', { name: 'Understand your needs.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Health & AI' })).toBeVisible();
   await page.getByLabel('Preferred cuisines').fill('Indian');
   await expect(page.getByRole('button', { name: 'Calculate my estimates' })).toBeDisabled();
   await page.getByRole('button', { name: 'Save preferences' }).click();

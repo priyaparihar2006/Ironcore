@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Dumbbell, Plus, Trash2, CheckCircle2, Clock, X, AlertCircle } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -91,24 +92,21 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            Workout Regimen Vault
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Build and curate master training templates, exercise sequences, and progressive load schedules.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-sm shadow-purple-950/5"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Workout Template</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Workout Plans"
+        subtitle="Build master training templates and exercise sequences."
+        actions={
+          <>
+            <button
+              onClick={() => setShowModal(true)}
+              className="btn btn-primary"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Workout Template</span>
+            </button>
+          </>
+        }
+      />
 
       {/* Plans Grid */}
       {loading ? (
@@ -121,7 +119,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
+              className="card flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -157,7 +155,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
       {/* Create Plan Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-2xl w-full shadow-sm border border-[var(--color-border-main)] max-h-[90vh] overflow-y-auto animate-fade-in">
+          <div className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[var(--color-text-main)]">Build New Workout Routine</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">
@@ -214,7 +212,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                     onClick={addExerciseRow}
                     className="text-xs font-bold text-[var(--color-text-main)] hover:underline flex items-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Exercise
+                    <Plus className="w-4 h-4" /> Add Exercise
                   </button>
                 </div>
 
@@ -230,7 +228,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Exercise name"
-                        className="flex-1 min-w-[150px] px-3 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-bold"
+                        className="flex-1 min-w-[150px] rounded-lg border border-[var(--color-border-main)] bg-[var(--color-card-bg)] px-3 py-2 text-xs font-bold"
                       />
                       <input
                         type="number"
@@ -241,7 +239,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Sets"
-                        className="w-16 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
+                        className="w-16 rounded-lg border border-[var(--color-border-main)] bg-[var(--color-card-bg)] px-2 py-2 text-xs font-mono"
                       />
                       <input
                         type="number"
@@ -252,7 +250,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Reps"
-                        className="w-16 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
+                        className="w-16 rounded-lg border border-[var(--color-border-main)] bg-[var(--color-card-bg)] px-2 py-2 text-xs font-mono"
                       />
                       <input
                         type="number"
@@ -263,7 +261,7 @@ export const TrainerWorkoutPlansPage: React.FC = () => {
                           setExercises(updated);
                         }}
                         placeholder="Load (kg)"
-                        className="w-20 px-2 py-2 rounded-lg border border-[var(--color-border-main)] bg-white text-xs font-mono"
+                        className="w-20 rounded-lg border border-[var(--color-border-main)] bg-[var(--color-card-bg)] px-2 py-2 text-xs font-mono"
                       />
                       {exercises.length > 1 && (
                         <button

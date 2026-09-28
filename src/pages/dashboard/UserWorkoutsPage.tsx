@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Dumbbell, CheckCircle2, Clock, Calendar, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -53,33 +54,30 @@ export const UserWorkoutsPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            My Workouts
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Access your assigned training regimens, track sets and load, and record completions.
-          </p>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex bg-neutral-100 p-2 rounded-lg self-start">
-          {(['ALL', 'PENDING', 'COMPLETED'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                filter === tab
-                  ? 'bg-white text-[var(--color-text-main)] shadow-sm'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
-              }`}
-            >
-              {tab === 'ALL' ? 'All Routines' : tab === 'PENDING' ? 'Active / Upcoming' : 'Completed'}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="My Workouts"
+        subtitle="Your assigned training routines, sets and completions."
+        actions={
+          <>
+            {/* Filter Pills */}
+            <div className="flex bg-neutral-100 p-2 rounded-lg self-start">
+              {(['ALL', 'PENDING', 'COMPLETED'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFilter(tab)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    filter === tab
+                      ? 'bg-white text-[var(--color-text-main)] shadow-sm'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                  }`}
+                >
+                  {tab === 'ALL' ? 'All Routines' : tab === 'PENDING' ? 'Active / Upcoming' : 'Completed'}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="space-y-4 animate-pulse">
@@ -100,7 +98,7 @@ export const UserWorkoutsPage: React.FC = () => {
           </button>
         </div>
       ) : filteredWorkouts.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white border border-[var(--color-border-main)] text-center">
+        <div className="card p-12 text-center">
           <Dumbbell className="w-12 h-12 mx-auto text-neutral-300 mb-3" />
           <h3 className="text-lg font-bold text-[var(--color-text-main)]">No workouts assigned yet</h3>
           <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto mt-1">
@@ -114,7 +112,7 @@ export const UserWorkoutsPage: React.FC = () => {
             return (
               <div
                 key={w.id}
-                className="bg-white rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm overflow-hidden transition-all"
+                className="card overflow-hidden transition-all !p-0"
               >
                 {/* Top Summary Bar */}
                 <div
@@ -140,7 +138,7 @@ export const UserWorkoutsPage: React.FC = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-6 text-xs text-[var(--color-text-muted)] mt-1">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" /> Scheduled: {w.scheduledDate}
+                          <Calendar className="w-4 h-4" /> Scheduled: {w.scheduledDate}
                         </span>
                         <span>•</span>
                         <span>Coach: {w.assignedByTrainerName || 'IronCore Staff'}</span>
@@ -160,7 +158,7 @@ export const UserWorkoutsPage: React.FC = () => {
                         disabled={actionLoading === w.id}
                         className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         <span>{actionLoading === w.id ? 'Saving...' : 'Mark Complete'}</span>
                       </button>
                     ) : (

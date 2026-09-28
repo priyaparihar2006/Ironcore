@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Sparkles, FileText, Download, ShieldCheck } from 'lucide-react';
@@ -102,22 +103,16 @@ export function UserHealthPage() {
   );
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl bg-black p-card sm:p-card text-white">
-        <div className="flex items-center gap-2 text-purple-300 text-sm font-bold">
-          <Sparkles size={18} /> YOUR WELLNESS COMPANION
-        </div>
-        <h1 className="text-3xl font-bold mt-3">Understand your needs.</h1>
-        <p className="text-neutral-300 mt-2 max-w-2xl">
-          Personal estimates, thoughtful meal choices and a clearer view of your progress. You stay
-          in control of every change.
-        </p>
-        <div className="flex flex-wrap gap-3 mt-6 text-xs">
-          <span className="rounded-full bg-white/10 px-3 py-2">Calculations work without AI</span>
-          <span className="rounded-full bg-white/10 px-3 py-2">
-            {data?.aiAvailable ? 'AI connected' : 'AI awaiting server configuration'}
-          </span>
-        </div>
-      </header>
+      <PageHeader
+        title="Health & AI"
+        subtitle="Personal estimates, thoughtful meal choices and a clearer view of your progress. You stay in control of every change."
+      />
+      <div className="flex flex-wrap gap-2 text-xs">
+        <span className="rounded-full bg-neutral-100 text-neutral-600 px-3 py-1.5">Calculations work without AI</span>
+        <span className="rounded-full bg-neutral-100 text-neutral-600 px-3 py-1.5">
+          {data?.aiAvailable ? 'AI connected' : 'AI awaiting server configuration'}
+        </span>
+      </div>
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 p-card text-red-800">
           {error}{' '}

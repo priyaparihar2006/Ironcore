@@ -1,6 +1,8 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import { ValidationInput, ValidationSelect, useFormValidation } from '../../components/ValidationInput';
 import { emailError, nameError, passwordError, choiceError } from '../../lib/validation';
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Users, Search, UserPlus, Trash2, Edit2, Shield, X, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { UserRole } from '../../types';
@@ -17,7 +19,13 @@ interface ManagedUser {
 export const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  // The topbar search navigates here with ?q=, so seed (and keep in sync with) that query.
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
+  const urlQuery = searchParams.get('q');
+  useEffect(() => {
+    if (urlQuery !== null) setSearch(urlQuery);
+  }, [urlQuery]);
   const [roleFilter, setRoleFilter] = useState<'ALL' | UserRole>('ALL');
 
   // Modal State
@@ -117,34 +125,31 @@ export const AdminUsersPage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            User & Role Governance
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Search, provision, modify roles, and enforce security policies across all accounts.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setEditingUser(null);
-            setName('');
-            setEmail('');
-            setPassword('');
-            setRole('USER');
-            validation.reset(); setFormError(''); setShowModal(true);
-          }}
-          className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all self-start sm:self-center cursor-pointer shadow-sm shadow-purple-950/5"
-        >
-          <UserPlus className="w-4 h-4" />
-          <span>Provision New User</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle="Search, provision and manage roles across all accounts."
+        actions={
+          <>
+            <button
+              onClick={() => {
+                setEditingUser(null);
+                setName('');
+                setEmail('');
+                setPassword('');
+                setRole('USER');
+                validation.reset(); setFormError(''); setShowModal(true);
+              }}
+              className="btn btn-primary"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Provision New User</span>
+            </button>
+          </>
+        }
+      />
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm flex flex-col sm:flex-row items-center gap-6 justify-between">
+      <div className="card flex flex-col sm:flex-row items-center gap-6 justify-between">
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3.5" />
           <input
@@ -179,7 +184,7 @@ export const AdminUsersPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm overflow-hidden">
+        <div className="card overflow-hidden !p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
@@ -196,8 +201,15 @@ export const AdminUsersPage: React.FC = () => {
                 {filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-neutral-50/50">
                     <td className="py-4 px-6">
-                      <div className="font-bold text-[var(--color-text-main)]">{u.name}</div>
-                      <div className="text-xs text-[var(--color-text-muted)] font-mono">ID: {u.id}</div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-text-main)] font-semibold text-xs flex items-center justify-center shrink-0">
+                          {u.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-[var(--color-text-main)] truncate">{u.name}</div>
+                          <div className="text-xs text-[var(--color-text-muted)] font-mono truncate">ID: {u.id}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-4 px-6 text-neutral-600 font-medium">{u.email}</td>
                     <td className="py-4 px-6">
@@ -257,7 +269,7 @@ export const AdminUsersPage: React.FC = () => {
       {/* Create / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[var(--color-text-main)]">
                 {editingUser ? 'Modify User Profile' : 'Provision User'}

@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, DollarSign, Shield, Activity, TrendingUp, CreditCard, ArrowRight, AlertCircle } from 'lucide-react';
+import { Users, DollarSign, AlertCircle } from 'lucide-react';
+import { PageHeader } from '../../components/dashboard/PageHeader';
+import { KpiCard } from '../../components/dashboard/KpiCard';
+import { Card } from '../../components/dashboard/Card';
+import { LineChart } from '../../components/charts/LineChart';
+import { DonutChart } from '../../components/charts/DonutChart';
 import { apiRequest } from '../../lib/api';
 import { UserPaymentRecord, UserProfileData } from '../../types';
 
@@ -16,16 +21,29 @@ interface AdminOverviewData {
   recentPayments: UserPaymentRecord[];
 }
 
+interface AdminAnalyticsData {
+  stats: { newRegistrationsThisMonth: number };
+  charts: {
+    userGrowth: { month: string; users: number; revenue: number }[];
+    membershipDistribution: { name: string; count: number }[];
+  };
+}
+
 export const AdminOverviewPage: React.FC = () => {
   const [data, setData] = useState<AdminOverviewData | null>(null);
+  const [analytics, setAnalytics] = useState<AdminAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOverview = async () => {
     try {
       setLoading(true);
-      const res = await apiRequest<AdminOverviewData>('/admin/overview');
+      const [res, analyticsRes] = await Promise.all([
+        apiRequest<AdminOverviewData>('/admin/overview'),
+        apiRequest<AdminAnalyticsData>('/admin/analytics'),
+      ]);
       setData(res);
+      setAnalytics(analyticsRes);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load admin overview.');
     } finally {
@@ -39,12 +57,20 @@ export const AdminOverviewPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-neutral-200 rounded-xl w-64"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-32 bg-neutral-200 rounded-3xl"></div>
+      <div className="space-y-section animate-pulse">
+        <div className="h-9 bg-neutral-200 rounded-xl w-64"></div>
+        <div className="kpi-grid">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 bg-neutral-200 rounded-2xl"></div>
           ))}
+        </div>
+        <div className="dashboard-grid">
+          <div className="h-72 bg-neutral-200 rounded-2xl span-8"></div>
+          <div className="h-72 bg-neutral-200 rounded-2xl span-4"></div>
+        </div>
+        <div className="dashboard-grid">
+          <div className="h-72 bg-neutral-200 rounded-2xl span-8"></div>
+          <div className="h-72 bg-neutral-200 rounded-2xl span-4"></div>
         </div>
       </div>
     );
@@ -52,11 +78,11 @@ export const AdminOverviewPage: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="p-card rounded-3xl bg-red-50 text-red-700 text-center">
+      <div className="card bg-red-50 text-red-700 text-center">
         <AlertCircle className="w-8 h-8 mx-auto text-red-500 mb-2" />
-        <h3 className="font-bold">Error loading admin metrics</h3>
+        <h3 className="font-semibold">Error loading admin metrics</h3>
         <p className="text-xs text-red-600 mb-4">{error}</p>
-        <button onClick={fetchOverview} className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">
+        <button onClick={fetchOverview} className="btn bg-red-600 text-white">
           Retry
         </button>
       </div>
@@ -64,157 +90,107 @@ export const AdminOverviewPage: React.FC = () => {
   }
 
   const { stats, recentUsers, recentPayments } = data;
+  const membershipDistribution = (analytics?.charts?.membershipDistribution ?? []).filter((d) => d.count > 0);
 
   return (
     <div className="space-y-section">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-            Facility Executive Summary
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-1">
-            Global metrics across membership revenue, facility throughput, coach ratios, and athlete retention.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <Link
-            to="/admin/users"
-            className="px-4 py-3 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Manage Users</span>
-          </Link>
-          <Link
-            to="/admin/payments"
-            className="px-4 py-3 rounded-xl bg-[var(--color-brand-bg)] text-[var(--color-text-main)] border border-[var(--color-border-main)] text-xs font-bold flex items-center gap-2 hover:bg-purple-100"
-          >
-            <DollarSign className="w-3.5 h-3.5 text-[var(--color-text-main)]" />
-            <span>View Invoices</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Primary KPI Blocks */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-5 gap-6">
-        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Total Users</span>
-            <Users className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.totalUsers}</div>
-          <div className="text-xs font-bold text-emerald-600 mt-1">+12% this month</div>
-        </div>
-
-        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Active Members</span>
-            <CreditCard className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.activeMembers}</div>
-          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Paid subscriptions</div>
-        </div>
-
-        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Total Revenue</span>
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-3xl font-bold text-emerald-700">
-            ${stats.totalRevenue.toLocaleString()}
-          </div>
-          <div className="text-xs font-bold text-emerald-600 mt-1">+18.4% ARR growth</div>
-        </div>
-
-        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Trainers</span>
-            <Shield className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.activeTrainers}</div>
-          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Certified staff</div>
-        </div>
-
-        <div className="bg-white p-card rounded-3xl border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between text-[var(--color-text-muted)] mb-2">
-            <span className="text-xs font-bold uppercase text-[var(--color-text-muted)]">Check-ins</span>
-            <Activity className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-3xl font-bold text-[var(--color-text-main)]">{stats.todayCheckins}</div>
-          <div className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">Turnstile scans today</div>
-        </div>
-      </div>
-
-      {/* Grid: Recent Users & Recent Transactions */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Recent Registered Users */}
-        <div className="lg:col-span-6 bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recent Registrations</h2>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">Newly joined gym members</p>
-            </div>
-            <Link to="/admin/users" className="text-xs font-bold text-[var(--color-text-main)] hover:underline">
-              View Directory →
+      <PageHeader
+        title="Overview"
+        subtitle="Memberships, revenue and facility activity at a glance."
+        actions={
+          <>
+            <Link to="/admin/payments" className="btn btn-secondary">
+              <DollarSign className="w-4 h-4" />
+              <span>View Invoices</span>
             </Link>
-          </div>
-
-          <div className="divide-y divide-neutral-100">
-            {recentUsers.map((u) => (
-              <div key={u.userId} className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-100 text-[var(--color-text-main)] font-bold text-xs flex items-center justify-center">
-                    {u.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-xs text-[var(--color-text-main)]">{u.name}</div>
-                    <div className="text-xs text-[var(--color-text-muted)]">{u.fitnessGoal}</div>
-                  </div>
-                </div>
-                <span className="text-xs font-bold uppercase px-2 py-1 rounded-full bg-neutral-100 text-neutral-600">
-                  {u.status || 'ACTIVE'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Payments */}
-        <div className="lg:col-span-6 bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-bold text-[var(--color-text-main)]">Recent Ledger Transactions</h2>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">Membership dues and upgrades</p>
-            </div>
-            <Link to="/admin/payments" className="text-xs font-bold text-[var(--color-text-main)] hover:underline">
-              All Invoices →
+            <Link to="/admin/users" className="btn btn-primary">
+              <Users className="w-4 h-4" />
+              <span>Manage Users</span>
             </Link>
-          </div>
+          </>
+        }
+      />
 
-          <div className="divide-y divide-neutral-100">
-            {recentPayments.map((p) => (
-              <div key={p.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-xs text-[var(--color-text-main)]">{p.planName} Tier</div>
-                  <div className="text-xs text-[var(--color-text-muted)]">
-                    {p.date} • {p.paymentMethod}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-xs text-emerald-700">+${p.amount}</div>
-                  <span className="text-[9px] font-bold uppercase text-emerald-600">
-                    {p.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+      <div className="kpi-grid">
+        <KpiCard label="Active Members" value={stats.activeMembers.toLocaleString()} support={`${stats.totalUsers.toLocaleString()} total accounts`} />
+        <KpiCard label="Total Revenue" value={`$${stats.totalRevenue.toLocaleString()}`} support="All recorded payments" />
+        <KpiCard label="Active Trainers" value={stats.activeTrainers.toLocaleString()} support="Certified staff" />
+        <KpiCard
+          label="New This Month"
+          value={analytics?.stats?.newRegistrationsThisMonth ?? '—'}
+          support="New member registrations"
+        />
       </div>
 
+      <div className="dashboard-grid">
+        <Card className="span-8" title="Member Growth" subtitle="Cumulative registered members, last 6 months">
+          <LineChart data={(analytics?.charts?.userGrowth ?? []).map((m) => ({ label: m.month, value: m.users }))} />
+        </Card>
+        <Card className="span-4" title="Membership Mix" subtitle="Active plans by tier">
+          <DonutChart data={membershipDistribution.map((d) => ({ label: d.name, value: d.count }))} centerLabel="Members" />
+        </Card>
+      </div>
+
+      <div className="dashboard-grid">
+        <Card className="span-8" title="Recent Members" subtitle="Newly registered accounts" link={{ to: '/admin/users', label: 'View directory' }}>
+          {recentUsers.length === 0 ? (
+            <p className="py-8 text-center card-subtitle">No members have registered yet.</p>
+          ) : (
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] border-b border-[var(--color-border-main)]">
+                    <th className="py-2 px-1 font-semibold">Member</th>
+                    <th className="py-2 px-1 font-semibold">Goal</th>
+                    <th className="py-2 px-1 font-semibold text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-main)]">
+                  {recentUsers.map((u) => (
+                    <tr key={u.userId}>
+                      <td className="py-3 px-1">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-text-main)] font-semibold text-xs flex items-center justify-center shrink-0">
+                            {u.name.charAt(0)}
+                          </div>
+                          <span className="font-medium text-[var(--color-text-main)] truncate">{u.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-1 text-[var(--color-text-muted)]">{u.fitnessGoal}</td>
+                      <td className="py-3 px-1 text-right">
+                        <span className="text-xs font-semibold uppercase px-2 py-1 rounded-full bg-neutral-100 text-neutral-600">
+                          {u.status || 'ACTIVE'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card className="span-4" title="Recent Payments" subtitle="Membership dues and upgrades" link={{ to: '/admin/payments', label: 'All invoices' }}>
+          {recentPayments.length === 0 ? (
+            <p className="py-8 text-center card-subtitle">No payments recorded yet.</p>
+          ) : (
+            <div className="divide-y divide-[var(--color-border-main)]">
+              {recentPayments.map((p) => (
+                <div key={p.id} className="py-3 first:pt-0 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-[var(--color-text-main)] truncate">{p.planName}</div>
+                    <div className="text-xs text-[var(--color-text-muted)] truncate">{p.date} • {p.paymentMethod}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-semibold text-emerald-700">+${p.amount}</div>
+                    <span className="text-xs uppercase text-[var(--color-text-muted)]">{p.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Shield, Star, Users, CheckCircle2, UserPlus, X } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -83,14 +84,7 @@ export const AdminTrainersPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Master Coaching Staff & Assignments
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Review accredited coaching staff, specialty disciplines, active caseloads, and client pairings.
-        </p>
-      </div>
+      <PageHeader title="Trainers" subtitle="Review coaching staff, specialties, caseloads and client pairings." />
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
@@ -102,30 +96,28 @@ export const AdminTrainersPage: React.FC = () => {
           {trainers.map((t) => (
             <div
               key={t.id}
-              className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
+              className="card flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-purple-100 text-[var(--color-text-main)] font-bold text-lg flex items-center justify-center">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-16 h-16 rounded-full bg-purple-100 text-[var(--color-text-main)] font-bold text-xl flex items-center justify-center shrink-0">
                       {t.name.charAt(0)}
                     </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-[var(--color-text-main)]">{t.name}</h3>
-                      <p className="text-xs text-[var(--color-text-muted)] font-medium">{t.email}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-[var(--color-text-main)] truncate">{t.name}</h3>
+                      <p className="text-xs font-semibold text-purple-700 truncate">{t.specialization}</p>
+                      <p className="text-xs text-[var(--color-text-muted)] truncate">{t.email}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1 bg-amber-50 text-amber-900 px-3 py-1 rounded-full text-xs font-bold">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
                     <span>{t.rating || 4.9}</span>
                   </div>
                 </div>
 
-                <div className="mt-6 p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100 space-y-2">
-                  <div className="text-xs font-bold text-neutral-700">
-                    Specialty Discipline: <span className="text-[var(--color-text-main)]">{t.specialization}</span>
-                  </div>
+                <div className="mt-6 p-card rounded-lg bg-[var(--color-brand-bg)] border border-neutral-100">
                   <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
                     <Users className="w-4 h-4 text-[var(--color-text-muted)]" />
                     <span>{t.assignedClientsCount} athletes currently coached</span>
@@ -153,7 +145,7 @@ export const AdminTrainersPage: React.FC = () => {
       {/* Assign Modal */}
       {showAssignModal && selectedTrainer && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-[var(--color-text-main)]">Pair Athlete</h3>

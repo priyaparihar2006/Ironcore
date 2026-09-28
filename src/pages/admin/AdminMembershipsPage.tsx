@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { CreditCard, Check, Sparkles, Plus, Edit2, X, CheckCircle2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -78,14 +79,7 @@ export const AdminMembershipsPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Membership Tier Management
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Configure subscription privileges, adjust recurring price points, and monitor active subscriber distribution.
-        </p>
-      </div>
+      <PageHeader title="Membership Plans" subtitle="Configure plan privileges, pricing and subscriber distribution." />
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-pulse">
@@ -98,7 +92,7 @@ export const AdminMembershipsPage: React.FC = () => {
           {plans.map((p) => (
             <div
               key={p.id}
-              className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm flex flex-col justify-between"
+              className="card flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
@@ -130,7 +124,7 @@ export const AdminMembershipsPage: React.FC = () => {
                 <div className="space-y-2 border-t border-neutral-100 pt-4 mb-6">
                   {p.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-neutral-700">
-                      <Check className="w-3.5 h-3.5 text-emerald-600 mt-1 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
                       <span>{f}</span>
                     </div>
                   ))}
@@ -149,7 +143,7 @@ export const AdminMembershipsPage: React.FC = () => {
       {/* Edit Tier Modal */}
       {showModal && editingPlan && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[var(--color-text-main)]">Edit {editingPlan.name} Tier</h3>
               <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-neutral-100">

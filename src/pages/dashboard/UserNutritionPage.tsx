@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Apple, Plus, Sparkles, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Sparkles, Pencil, Trash2, X } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import type { NutritionData, MealEntry } from '../../types';
 import type { HealthDashboard, MealDraft } from '../../health';
@@ -162,20 +163,16 @@ export function UserNutritionPage() {
   const timezone = health?.state.preferences?.timezone || 'UTC';
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Apple /> Nutrition
-          </h1>
-          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-            Log what you eat, review portions and build a clearer picture of your day.
-          </p>
-        </div>
-        <button className={button} disabled={!!busy || !date} onClick={() => startManual()}>
-          <Plus size={16} className="inline mr-2" />
-          Log a meal
-        </button>
-      </header>
+      <PageHeader
+        title="Nutrition"
+        subtitle="Log what you eat, review portions and build a clearer picture of your day."
+        actions={
+          <button className="btn btn-primary" disabled={!!busy || !date} onClick={() => startManual()}>
+            <Plus size={16} />
+            <span>Log a meal</span>
+          </button>
+        }
+      />
       <div className="flex flex-wrap gap-6 items-end">
         <label className="text-sm font-semibold">
           Your day
@@ -241,7 +238,7 @@ export function UserNutritionPage() {
             ].map(([label, consumed, target, unit]) => (
               <article
                 key={String(label)}
-                className="bg-white rounded-3xl border border-[var(--color-border-main)] p-card"
+                className="card"
               >
                 <p className="text-xs uppercase font-bold text-[var(--color-text-muted)]">{label}</p>
                 <p className="text-2xl font-bold mt-2">
@@ -268,7 +265,7 @@ export function UserNutritionPage() {
               Some entries have unknown macros or legacy provenance. These totals may be incomplete.
             </p>
           )}
-          <section className="bg-white rounded-3xl border border-[var(--color-border-main)] p-card space-y-4">
+          <section className="card space-y-4">
             <h2 className="text-xl font-bold">Meals for {date}</h2>
             {!nutrition.meals.length ? (
               <p className="text-sm text-[var(--color-text-muted)]">

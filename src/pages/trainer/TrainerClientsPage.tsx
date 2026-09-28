@@ -1,4 +1,6 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Users, Dumbbell, Target, Scale, CheckCircle2, ChevronRight, X, AlertCircle } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { UserProfileData, WorkoutPlanTemplate } from '../../types';
@@ -8,6 +10,8 @@ export const TrainerClientsPage: React.FC = () => {
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlanTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<UserProfileData | null>(null);
+  // The topbar search navigates here with ?q= to filter the athlete list.
+  const query = (useSearchParams()[0].get('q') ?? '').trim().toLowerCase();
 
   // Assign modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -83,14 +87,7 @@ export const TrainerClientsPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Assigned Athlete Profiles
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Review physiological baselines, targets, and prescribe periodized workout regimens.
-        </p>
-      </div>
+      <PageHeader title="Athletes" subtitle="Review baselines and targets, and assign workout plans." />
 
       {loading ? (
         <div className="space-y-4 animate-pulse">
@@ -104,7 +101,7 @@ export const TrainerClientsPage: React.FC = () => {
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] px-2">
               Athletes ({clients.length})
             </h2>
-            {clients.map((c) => {
+            {clients.filter((c) => !query || c.name.toLowerCase().includes(query) || (c.fitnessGoal ?? '').toLowerCase().includes(query)).map((c) => {
               const isSelected = selectedClient?.userId === c.userId;
               return (
                 <div
@@ -117,7 +114,7 @@ export const TrainerClientsPage: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
                       isSelected ? 'bg-white/10 text-white' : 'bg-purple-100 text-[var(--color-text-main)]'
                     }`}>
                       {c.name.charAt(0)}
@@ -138,7 +135,7 @@ export const TrainerClientsPage: React.FC = () => {
           {/* Selected Athlete Dossier (8 Cols) */}
           <div className="lg:col-span-8">
             {selectedClient ? (
-              <div className="bg-white rounded-lg p-card sm:p-card border border-[var(--color-border-main)]/80 shadow-sm space-y-6">
+              <div className="card space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-main)] px-3 py-1 rounded-full bg-[var(--color-brand-bg)]">
@@ -215,7 +212,7 @@ export const TrainerClientsPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-12 text-center text-[var(--color-text-muted)] bg-white rounded-3xl border border-[var(--color-border-main)]">
+              <div className="card p-12 text-center text-[var(--color-text-muted)]">
                 Select an athlete to review details.
               </div>
             )}
@@ -227,7 +224,7 @@ export const TrainerClientsPage: React.FC = () => {
       {/* Assign Modal */}
       {showAssignModal && selectedClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-card">
-          <div className="bg-white rounded-lg p-card sm:p-card max-w-md w-full shadow-sm border border-[var(--color-border-main)] animate-fade-in">
+          <div className="card max-w-md w-full animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-[var(--color-text-main)]">Assign Workout Routine</h3>

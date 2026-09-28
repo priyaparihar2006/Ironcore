@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/dashboard/PageHeader';
 import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -38,27 +39,20 @@ export const TrainerSchedulePage: React.FC = () => {
   return (
     <div className="space-y-section">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
-          Coaching Sessions & Floor Schedule
-        </h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Review booked appointments, private athlete assessments, and track completion states.
-        </p>
-      </div>
+      <PageHeader title="Schedule" subtitle="Booked sessions and assessments with your athletes." />
 
       {loading ? (
         <div className="space-y-4 animate-pulse">
           <div className="h-40 bg-neutral-200 rounded-3xl"></div>
         </div>
       ) : sessions.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-[var(--color-border-main)] text-[var(--color-text-muted)]">
+        <div className="card p-12 text-center text-[var(--color-text-muted)]">
           <Calendar className="w-12 h-12 mx-auto text-neutral-300 mb-2" />
           <p className="text-sm font-bold text-neutral-700">No sessions currently scheduled</p>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">New member bookings will appear here in real-time.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[var(--color-border-main)] shadow-sm/80 shadow-sm overflow-hidden">
+        <div className="card overflow-hidden !p-0">
           <div className="p-card border-b border-neutral-100 flex items-center justify-between">
             <h2 className="text-lg font-bold text-[var(--color-text-main)]">Session Roster</h2>
             <span className="text-xs font-bold text-[var(--color-text-muted)]">{sessions.length} Appointments</span>

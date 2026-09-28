@@ -50,9 +50,9 @@ export function DashboardSidebar({ role, items, onLogout }: Props) {
     <Link key={key ?? path} to={path} aria-label={label} title={collapsed ? label : undefined}
       aria-current={active ? 'page' : undefined}
       className={`dashboard-nav-link ${active
-        ? 'bg-[var(--color-primary)]/15 border-l-[var(--color-primary)] text-neutral-900 font-bold'
-        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}`}>
-      <Icon size={19} className="shrink-0" />
+        ? 'bg-[var(--color-primary)]/15 border-l-[var(--color-primary)] text-[var(--color-text-main)] font-bold'
+        : 'text-neutral-600 hover:bg-neutral-100 hover:text-[var(--color-text-main)]'}`}>
+      <Icon size={18} className="shrink-0" />
       {!collapsed && <span className="truncate">{label}</span>}
     </Link>
   );
@@ -84,12 +84,12 @@ export function DashboardSidebar({ role, items, onLogout }: Props) {
       <div className="border-t border-[var(--color-border-main)] pt-4 space-y-2">
         {portals.map(({ path, label, icon: Icon }) => navLink(path, label, Icon, false, path))}
         {!collapsed && <div className="flex items-center gap-3 py-4 min-w-0">
-          <img src={resolveAvatarUrl(user)} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          <img src={resolveAvatarUrl(user)} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover shrink-0" />
           <div className="min-w-0 text-xs"><p className="font-bold truncate">{user?.name}</p><p className="text-neutral-500 truncate">{user?.email}</p></div>
         </div>}
         <button type="button" onClick={onLogout} aria-label="Sign Out" title={collapsed ? 'Sign Out' : undefined}
           className="dashboard-nav-link w-full text-neutral-600 hover:bg-red-50 hover:text-red-700">
-          <LogOut size={19} className="shrink-0" />{!collapsed && <span>Sign Out</span>}
+          <LogOut size={18} className="shrink-0" />{!collapsed && <span>Sign Out</span>}
         </button>
       </div>
     </aside>

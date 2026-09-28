@@ -1,5 +1,7 @@
 import { DashboardSidebar } from './DashboardSidebar';
+import { DashboardTopbar } from './DashboardTopbar';
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -7,20 +9,16 @@ import {
   Dumbbell,
   Calendar,
   LogOut,
-  Menu,
-  X,
   Shield,
   ArrowLeft,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { resolveAvatarUrl } from '../../lib/avatar';
 
 interface TrainerDashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export const TrainerDashboardLayout: React.FC<TrainerDashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,30 +45,17 @@ export const TrainerDashboardLayout: React.FC<TrainerDashboardLayoutProps> = ({ 
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Header */}
-        <header className="dashboard-topbar bg-white/80 backdrop-blur-md border-b border-[var(--color-border-main)]/80 sticky top-0 z-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              aria-label="Toggle navigation"
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden shrink-0 p-2 rounded-xl text-neutral-600 hover:bg-neutral-100"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-main)] px-2 py-1 rounded-full bg-[var(--color-brand-bg)]">
-                Coaching Portal
-              </span>
-              <p className="text-base sm:text-lg font-bold truncate tracking-tight text-[var(--color-text-main)] mt-1">
-                Coach {user?.name}
-              </p>
-            </div>
-          </div>
-        </header>
+        <DashboardTopbar
+          mobileMenuOpen={mobileMenuOpen}
+          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onLogout={handleLogout}
+          searchPlaceholder="Search athletes..."
+          onSearch={(query) => navigate(query ? `/trainer/clients?q=${encodeURIComponent(query)}` : '/trainer/clients')}
+        />
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-b border-[var(--color-border-main)] p-6 space-y-1 z-20">
+          <div className="lg:hidden bg-[var(--color-card-bg)] border-b border-[var(--color-border-main)] p-6 space-y-1 z-20">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -85,7 +70,7 @@ export const TrainerDashboardLayout: React.FC<TrainerDashboardLayoutProps> = ({ 
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-xl text-sm font-bold border-l-[3px] ${
                     isActive
-                      ? 'bg-[var(--color-primary)]/15 border-l-[var(--color-primary)] text-neutral-900'
+                      ? 'bg-[var(--color-primary)]/15 border-l-[var(--color-primary)] text-[var(--color-text-main)]'
                       : 'border-l-transparent text-neutral-600 hover:bg-neutral-100'
                   }`}
                 >
