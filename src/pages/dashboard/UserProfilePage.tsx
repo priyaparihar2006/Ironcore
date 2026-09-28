@@ -362,7 +362,7 @@ export const UserProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Full Legal Name</label>
+              <label className="form-label">Full Legal Name</label>
               <div className="relative">
                 <User className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                 <ValidationInput {...profileValidation.field('name', 'Full name')}
@@ -370,43 +370,43 @@ export const UserProfilePage: React.FC = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-input pl-10"
                 maxLength={100} autoComplete="name" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Email Address</label>
+              <label className="form-label">Email Address</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                 <input
                   type="email"
                   disabled
                   value={email}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--color-border-main)] bg-[var(--color-brand-bg)] text-[var(--color-text-muted)] text-xs font-medium cursor-not-allowed"
+                  className="form-input pl-10 bg-[var(--color-brand-bg)] text-[var(--color-text-muted)] cursor-not-allowed"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Phone Number</label>
+              <label className="form-label">Phone Number</label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-[var(--color-text-muted)] absolute left-3.5 top-3" />
                 <ValidationInput {...profileValidation.field('phone', 'Phone number')}
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input pl-10"
                 maxLength={32} autoComplete="tel" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Gender</label>
+              <label className="form-label">Gender</label>
               <ValidationSelect {...profileValidation.field('gender', 'gender')}
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                className="form-input"
               >
                 <option value="Prefer not to say">Prefer not to say</option>
                 <option value="Male">Male</option>
@@ -417,12 +417,12 @@ export const UserProfilePage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Primary Fitness Goal</label>
+            <label className="form-label">Primary Fitness Goal</label>
             <ValidationSelect {...profileValidation.field('fitnessGoal', 'fitnessGoal')}
               value={fitnessGoal}
               onChange={(e) => setFitnessGoal(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+              className="form-input"
             >
               <option value="" disabled>Select Goal</option>
               {FITNESS_GOALS.map((goal) => (
@@ -453,69 +453,65 @@ export const UserProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 2xl:grid-cols-5 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">Height (cm)</label>
+              <label className="form-label">Height (cm)</label>
               <ValidationInput {...profileValidation.field('height', 'Height (cm)')}
                 type="text"
                 required
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
                 placeholder="Enter height"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                className="form-input"
               inputMode="decimal" maxLength={8} />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">Current Weight (kg)</label>
+              <label className="form-label">Current Weight (kg)</label>
               <ValidationInput {...profileValidation.field('currentWeight', 'Current weight (kg)')}
                 type="text"
                 required
                 value={currentWeight}
                 onChange={(e) => setCurrentWeight(e.target.value)}
                 placeholder="Enter current weight"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold text-[var(--color-text-main)]"
+                className="form-input"
               inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">Target Weight (kg)</label>
+              <label className="form-label">Target Weight (kg)</label>
               <ValidationInput {...profileValidation.field('targetWeight', 'Target weight (kg)')}
                 type="text"
                 required
                 value={targetWeight}
                 onChange={(e) => setTargetWeight(e.target.value)}
                 placeholder="Enter target weight"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold text-emerald-700"
+                className="form-input text-emerald-700"
               inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">Body Fat %</label>
+              <label className="form-label">Body Fat %</label>
               <ValidationInput {...profileValidation.field('bodyFatPercentage', 'Body fat %')}
                 type="text"
                 value={bodyFatPercent}
                 onChange={(e) => setBodyFatPercent(e.target.value)}
                 placeholder="Optional"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                className="form-input"
               inputMode="decimal" maxLength={8} />
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-xs font-bold text-[var(--color-text-muted)] uppercase mb-1">Muscle Mass %</label>
+              <label className="form-label">Muscle Mass %</label>
               <ValidationInput {...profileValidation.field('muscleMass', 'Muscle mass %')}
                 type="text"
                 value={muscleMassPercent}
                 onChange={(e) => setMuscleMassPercent(e.target.value)}
                 placeholder="Optional"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                className="form-input"
               inputMode="decimal" maxLength={8} />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={savingProfile}
-            className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-all cursor-pointer shadow-sm"
-          >
+          <button type="submit" disabled={savingProfile} className="btn btn-primary">
             <Save className="w-4 h-4" />
             <span>{savingProfile ? 'Saving Details...' : profileComplete ? 'Save Profile Changes' : 'Save & Continue'}</span>
           </button>
@@ -541,47 +537,43 @@ export const UserProfilePage: React.FC = () => {
 
         <form noValidate onSubmit={handleChangePassword} className="space-y-4 max-w-lg">
           <div>
-            <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Current Password</label>
+            <label className="form-label">Current Password</label>
             <ValidationInput {...passwordValidation.field('currentPassword', 'Current password')}
               type="password"
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+              className="form-input"
             maxLength={4096} autoComplete="current-password" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">New Password</label>
+              <label className="form-label">New Password</label>
               <ValidationInput {...passwordValidation.field('newPassword', 'New password')}
                 type="password"
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Min. 8 characters"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                className="form-input"
               maxLength={256} autoComplete="new-password" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Confirm New Password</label>
+              <label className="form-label">Confirm New Password</label>
               <ValidationInput {...passwordValidation.field('confirmPassword', 'Confirm new password')}
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat new password"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                className="form-input"
               maxLength={256} autoComplete="new-password" />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={passwordLoading}
-            className="px-6 py-3 rounded-xl bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-          >
+          <button type="submit" disabled={passwordLoading} className="btn bg-neutral-900 text-white hover:bg-neutral-800">
             {passwordLoading ? 'Updating Password...' : 'Update Password'}
           </button>
         </form>

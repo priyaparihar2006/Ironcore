@@ -1,4 +1,6 @@
 import { KpiCard } from '../../components/dashboard/KpiCard';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import { LineChart } from '../../components/charts/LineChart';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { ValidationInput, useFormValidation } from '../../components/ValidationInput';
@@ -169,12 +171,13 @@ export const UserProgressPage: React.FC = () => {
           </button>
         </div>
       ) : sorted.length === 0 ? (
-        <div className="card p-12 text-center">
-          <TrendingUp className="w-12 h-12 mx-auto text-neutral-300 mb-3" />
-          <h3 className="text-lg font-bold text-[var(--color-text-main)]">No progress data yet</h3>
-          <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto mt-1">
-            Log your first entry to start building your weight, strength, and activity history.
-          </p>
+        <div className="card">
+          <EmptyState
+            icon={TrendingUp}
+            title="No progress data yet"
+            body="Log your first entry to start building your weight, strength, and activity history."
+            action={{ label: 'Log Progress Entry', onClick: () => { resetForm(); setShowModal(true); } }}
+          />
         </div>
       ) : (
         <>
@@ -230,32 +233,30 @@ export const UserProgressPage: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="table-clean">
                 <thead>
-                  <tr className="bg-neutral-50/70 text-[var(--color-text-muted)] uppercase tracking-wider font-bold border-b border-neutral-100">
-                    <th className="py-3 px-6">Date</th>
-                    <th className="py-3 px-6">Weight (kg)</th>
-                    <th className="py-3 px-6">Calories Burned</th>
-                    <th className="py-3 px-6">Steps</th>
-                    <th className="py-3 px-6">Strength Score</th>
-                    <th className="py-3 px-6">Status</th>
-                    <th className="py-3 px-6">Coach Notes</th>
+                  <tr>
+                    <th>Date</th>
+                    <th>Weight (kg)</th>
+                    <th>Calories Burned</th>
+                    <th>Steps</th>
+                    <th>Strength Score</th>
+                    <th>Status</th>
+                    <th>Coach Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100">
+                <tbody>
                   {sorted.slice().reverse().map((rec) => (
                     <tr key={rec.id} className="hover:bg-neutral-50/50">
-                      <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{rec.date}</td>
-                      <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{rec.weightKg} kg</td>
-                      <td className="py-4 px-6 text-neutral-700">{rec.caloriesBurned} kcal</td>
-                      <td className="py-4 px-6 text-neutral-700">{rec.steps.toLocaleString()}</td>
-                      <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{rec.strengthScore}/100</td>
-                      <td className="py-4 px-6">
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                          Logged
-                        </span>
+                      <td className="font-bold text-[var(--color-text-main)]">{rec.date}</td>
+                      <td className="font-bold text-[var(--color-text-main)]">{rec.weightKg} kg</td>
+                      <td className="text-neutral-700">{rec.caloriesBurned} kcal</td>
+                      <td className="text-neutral-700">{rec.steps.toLocaleString()}</td>
+                      <td className="font-bold text-[var(--color-text-main)]">{rec.strengthScore}/100</td>
+                      <td>
+                        <Badge tone="success">Logged</Badge>
                       </td>
-                      <td className="py-4 px-6 text-[var(--color-text-muted)] italic max-w-xs truncate">
+                      <td className="text-[var(--color-text-muted)] italic max-w-xs truncate">
                         {rec.notes || '—'}
                       </td>
                     </tr>
@@ -281,55 +282,55 @@ export const UserProgressPage: React.FC = () => {
             <form noValidate onSubmit={handleAddEntry} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Weight (kg)</label>
+                  <label className="form-label">Weight (kg)</label>
                   <ValidationInput {...validation.field('weightKg', 'Weight (kg)')}
                     type="text"
                     required
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-sm font-bold focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   inputMode="decimal" maxLength={16} min={20} max={300} step="0.1" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Calories Burned</label>
+                  <label className="form-label">Calories Burned</label>
                   <ValidationInput {...validation.field('caloriesBurned', 'Calories burned')}
                     type="text"
                     value={caloriesBurned}
                     onChange={(e) => setCaloriesBurned(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-sm font-bold focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   inputMode="numeric" maxLength={6} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Daily Steps</label>
+                  <label className="form-label">Daily Steps</label>
                   <ValidationInput {...validation.field('steps', 'Daily steps')}
                     type="text"
                     value={steps}
                     onChange={(e) => setSteps(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-sm font-bold focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   inputMode="numeric" maxLength={7} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Strength Score (0-100)</label>
+                  <label className="form-label">Strength Score (0-100)</label>
                   <ValidationInput {...validation.field('strengthScore', 'Strength score')}
                     type="text"
                     value={strengthScore}
                     onChange={(e) => setStrengthScore(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-sm font-bold focus:ring-2 focus:ring-blue-500"
+                    className="form-input"
                   inputMode="numeric" maxLength={3} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Notes / Reflection</label>
+                <label className="form-label">Notes / Reflection</label>
                 <textarea maxLength={2000}
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Felt strong on bench press, energy high after morning meal."
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium focus:ring-2 focus:ring-blue-500"
+                  className="form-input !h-auto py-3"
                 />
               </div>
 
@@ -340,11 +341,7 @@ export const UserProgressPage: React.FC = () => {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
-              >
+              <button type="submit" disabled={submitting} className="btn btn-primary w-full">
                 {submitting ? 'Recording...' : 'Save Progress Entry'}
               </button>
             </form>

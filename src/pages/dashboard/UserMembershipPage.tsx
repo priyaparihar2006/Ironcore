@@ -1,4 +1,6 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
 import { Check, ShieldCheck, Sparkles, AlertCircle, ArrowRight, CheckCircle2, CreditCard } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -107,10 +109,7 @@ export const UserMembershipPage: React.FC = () => {
         <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
         <h2 className="text-lg font-bold">Failed to load membership</h2>
         <p className="text-sm text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchMembership}
-          className="px-6 py-2 rounded-xl bg-red-600 text-white text-xs font-bold"
-        >
+        <button onClick={fetchMembership} className="btn bg-red-600 text-white">
           Retry
         </button>
       </div>
@@ -194,15 +193,12 @@ export const UserMembershipPage: React.FC = () => {
         </div>
       ) : (
         /* No membership on record */
-        <div className="card sm:p-10 flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-lg bg-[var(--color-brand-bg)] text-purple-600 flex items-center justify-center mb-4">
-            <CreditCard className="w-7 h-7" />
-          </div>
-          <h2 className="text-xl font-bold text-[var(--color-text-main)]">No active membership</h2>
-          <p className="text-xs text-[var(--color-text-muted)] max-w-sm mt-2">
-            You don't have a membership on record yet. Choose one of the tiers below to unlock full
-            facility access and coaching.
-          </p>
+        <div className="card">
+          <EmptyState
+            icon={CreditCard}
+            title="No active membership"
+            body="You don't have a membership on record yet. Choose one of the tiers below to unlock full facility access and coaching."
+          />
         </div>
       )}
 
@@ -235,16 +231,14 @@ export const UserMembershipPage: React.FC = () => {
               }`}
             >
               <span>Annual (Save 20%)</span>
-              <span className="text-[9px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                Best Value
-              </span>
+              <Badge tone="success">Best Value</Badge>
             </button>
           </div>
         </div>
 
         {plans.length === 0 ? (
-          <div className="card p-10 text-center text-sm text-[var(--color-text-muted)]">
-            No membership plans are available right now.
+          <div className="card">
+            <EmptyState icon={CreditCard} title="No plans available" body="Membership tiers will appear here once they're configured." />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -267,11 +261,7 @@ export const UserMembershipPage: React.FC = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-xl font-bold text-[var(--color-text-main)]">{p.name}</h3>
-                      {isCurrent && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-[var(--color-primary)]/20 text-[var(--color-text-main)]">
-                          Current Tier
-                        </span>
-                      )}
+                      {isCurrent && <Badge tone="success">Current Tier</Badge>}
                     </div>
 
                     <p className="text-xs text-[var(--color-text-muted)] mb-6">{p.description}</p>
@@ -296,11 +286,7 @@ export const UserMembershipPage: React.FC = () => {
                   <button
                     onClick={() => handleUpgrade(p.id, p.name)}
                     disabled={isCurrent || upgrading === p.id}
-                    className={`w-full py-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isCurrent
-                        ? 'bg-neutral-100 text-[var(--color-text-muted)] cursor-not-allowed'
-                        : 'bg-[var(--color-primary)] text-[var(--color-text-main)] hover:bg-neutral-800 shadow-sm'
-                    }`}
+                    className={`w-full ${isCurrent ? 'btn btn-secondary' : 'btn btn-primary'}`}
                   >
                     {upgrading === p.id ? (
                       <span>Processing...</span>

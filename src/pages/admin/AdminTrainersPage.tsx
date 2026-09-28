@@ -1,6 +1,7 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
-import { Shield, Star, Users, CheckCircle2, UserPlus, X } from 'lucide-react';
+import { Star, Users, CheckCircle2, UserPlus, X } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { UserProfileData } from '../../types';
 
@@ -91,6 +92,10 @@ export const AdminTrainersPage: React.FC = () => {
           <div className="h-48 bg-neutral-200 rounded-3xl"></div>
           <div className="h-48 bg-neutral-200 rounded-3xl"></div>
         </div>
+      ) : trainers.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={Users} title="No trainers on staff yet" body="Add a trainer account to start assigning athletes and building schedules." />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {trainers.map((t) => (
@@ -131,7 +136,7 @@ export const AdminTrainersPage: React.FC = () => {
                     setSelectedTrainer(t);
                     setShowAssignModal(true);
                   }}
-                  className="w-full py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center justify-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer"
+                  className="btn btn-primary w-full"
                 >
                   <UserPlus className="w-4 h-4" />
                   <span>Assign Athlete to {t.name.split(' ')[0]}</span>
@@ -158,11 +163,11 @@ export const AdminTrainersPage: React.FC = () => {
 
             <form onSubmit={handleAssignAthlete} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Select Athlete *</label>
+                <label className="form-label">Select Athlete *</label>
                 <select
                   value={selectedClientId}
                   onChange={(e) => setSelectedClientId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-select"
                 >
                   {clients.map((c) => (
                     <option key={c.userId} value={c.userId}>
@@ -172,11 +177,7 @@ export const AdminTrainersPage: React.FC = () => {
                 </select>
               </div>
 
-              <button
-                type="submit"
-                disabled={assigning}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
+              <button type="submit" disabled={assigning} className="btn btn-primary w-full">
                 {assigning ? 'Confirming pairing...' : 'Confirm Assignment'}
               </button>
             </form>

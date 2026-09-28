@@ -6,8 +6,8 @@ import { apiRequest } from '../../lib/api';
 import type { NutritionData, MealEntry } from '../../types';
 import type { HealthDashboard, MealDraft } from '../../health';
 
-const input = 'w-full rounded-xl border border-[var(--color-border-main)] bg-white p-3 text-sm';
-const button = 'rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] px-4 py-3 text-sm font-bold disabled:opacity-40';
+const input = 'form-input';
+const button = 'btn btn-primary';
 const blank = {
   type: 'Lunch',
   name: '',
@@ -191,7 +191,7 @@ export function UserNutritionPage() {
           />
         </label>
         <p className="text-xs text-[var(--color-text-muted)] pb-3">
-          {timezone} ?{' '}
+          {timezone} ·{' '}
           <Link className="underline text-[var(--color-text-main)]" to="/dashboard/health">
             Health preferences & targets
           </Link>
@@ -272,64 +272,81 @@ export function UserNutritionPage() {
                 No meals logged. An empty day does not mean you ate nothing.
               </p>
             ) : (
-              <div className="divide-y divide-neutral-100">
+              <div className="space-y-3">
                 {nutrition.meals.map((meal) => (
-                  <article key={meal.id} className="py-4 flex flex-wrap justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase text-[var(--color-text-main)] font-bold">
-                        {meal.type} ? {meal.time}
-                      </p>
-                      <h3 className="font-bold mt-1">{meal.name}</h3>
-                      <p className="text-sm text-[var(--color-text-muted)] mt-1">
-                        {meal.calories} kcal ? Protein {meal.proteinGrams} g ? Carbs{' '}
-                        {meal.carbsGrams} g ? Fat {meal.fatsGrams} g
-                      </p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                  <article key={meal.id} className="rounded-xl border border-[var(--color-border-main)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+                          {meal.type} · {meal.time}
+                        </p>
+                        <h3 className="text-base font-bold text-[var(--color-text-main)] mt-1">{meal.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          aria-label={`Edit ${meal.name}`}
+                          disabled={!!busy}
+                          className="p-2 rounded-lg hover:bg-neutral-100"
+                          onClick={() => startManual(meal)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          aria-label={`Delete ${meal.name}`}
+                          disabled={!!busy}
+                          className="p-2 rounded-lg text-red-700 hover:bg-red-50"
+                          onClick={() => setRemoveId(meal.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                      {[
+                        ['Calories', `${meal.calories} kcal`],
+                        ['Protein', `${meal.proteinGrams}g`],
+                        ['Carbs', `${meal.carbsGrams}g`],
+                        ['Fat', `${meal.fatsGrams}g`],
+                      ].map(([label, value]) => (
+                        <div key={label}>
+                          <p className="text-xs uppercase tracking-wider text-[var(--color-text-muted)]">{label}</p>
+                          <p className="text-base font-bold text-[var(--color-text-main)] mt-0.5">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {(meal.source || meal.unknownMacros) && (
+                      <p className="text-xs text-[var(--color-text-muted)] mt-3">
                         {meal.source || 'Legacy manual entry'}
-                        {meal.unknownMacros ? ' ? Some macros unknown' : ''}
+                        {meal.unknownMacros ? ' · Some macros unknown' : ''}
                       </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        aria-label={`Edit ${meal.name}`}
-                        disabled={!!busy}
-                        className="p-2 rounded-xl hover:bg-neutral-100"
-                        onClick={() => startManual(meal)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        aria-label={`Delete ${meal.name}`}
-                        disabled={!!busy}
-                        className="p-2 rounded-xl text-red-700 hover:bg-red-50"
-                        onClick={() => setRemoveId(meal.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                      {removeId === meal.id && (
-                        <>
-                          <button
-                            disabled={!!busy}
-                            className="text-xs underline text-red-700"
-                            onClick={() =>
-                              run('delete', async () => {
-                                const r = await apiRequest<{ nutrition: NutritionData }>(
-                                  `/user/nutrition/meals/${meal.id}`,
-                                  { method: 'DELETE' },
-                                );
-                                setNutrition(r.nutrition);
-                                setRemoveId('');
-                              })
-                            }
-                          >
-                            Confirm delete
-                          </button>
-                          <button className="text-xs underline" onClick={() => setRemoveId('')}>
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    )}
+
+                    {removeId === meal.id && (
+                      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[var(--color-border-main)]">
+                        <span className="text-xs text-[var(--color-text-muted)]">Delete this meal?</span>
+                        <button
+                          disabled={!!busy}
+                          className="text-xs font-bold underline text-red-700"
+                          onClick={() =>
+                            run('delete', async () => {
+                              const r = await apiRequest<{ nutrition: NutritionData }>(
+                                `/user/nutrition/meals/${meal.id}`,
+                                { method: 'DELETE' },
+                              );
+                              setNutrition(r.nutrition);
+                              setRemoveId('');
+                            })
+                          }
+                        >
+                          Confirm delete
+                        </button>
+                        <button className="text-xs font-bold underline text-[var(--color-text-muted)]" onClick={() => setRemoveId('')}>
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </article>
                 ))}
               </div>
@@ -362,7 +379,7 @@ export function UserNutritionPage() {
             rows={3}
             maxLength={1500}
             value={description}
-            className={input + ' mt-1'}
+            className={input + ' !h-auto py-3 mt-1'}
             placeholder="150 g cooked white rice, 100 g boiled lentils, 5 g olive oil"
             onChange={(e) => {
               setDescription(e.target.value);

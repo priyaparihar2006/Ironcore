@@ -1,7 +1,8 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, Dumbbell, Target, Scale, CheckCircle2, ChevronRight, X, AlertCircle } from 'lucide-react';
+import { Users, Dumbbell, Target, ChevronRight, X, CheckCircle2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { UserProfileData, WorkoutPlanTemplate } from '../../types';
 
@@ -93,14 +94,21 @@ export const TrainerClientsPage: React.FC = () => {
         <div className="space-y-4 animate-pulse">
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
         </div>
+      ) : clients.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={Users} title="No athletes assigned yet" body="Athletes assigned to you by an admin will appear here." />
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Athlete List (4 Cols) */}
           <div className="lg:col-span-4 space-y-3">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] px-2">
               Athletes ({clients.length})
             </h2>
+            {clients.filter((c) => !query || c.name.toLowerCase().includes(query) || (c.fitnessGoal ?? '').toLowerCase().includes(query)).length === 0 && (
+              <p className="text-sm text-[var(--color-text-muted)] px-2">No athletes match "{query}".</p>
+            )}
             {clients.filter((c) => !query || c.name.toLowerCase().includes(query) || (c.fitnessGoal ?? '').toLowerCase().includes(query)).map((c) => {
               const isSelected = selectedClient?.userId === c.userId;
               return (
@@ -147,11 +155,8 @@ export const TrainerClientsPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => setShowAssignModal(true)}
-                    className="px-6 py-3 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 cursor-pointer shadow-sm self-start sm:self-center"
-                  >
-                    <Dumbbell className="w-4 h-4 text-purple-300" />
+                  <button onClick={() => setShowAssignModal(true)} className="btn btn-primary self-start sm:self-center">
+                    <Dumbbell className="w-4 h-4" />
                     <span>Assign Workout Plan</span>
                   </button>
                 </div>
@@ -212,8 +217,8 @@ export const TrainerClientsPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="card p-12 text-center text-[var(--color-text-muted)]">
-                Select an athlete to review details.
+              <div className="card">
+                <EmptyState icon={Users} title="No athlete selected" body="Choose an athlete from the list to review their measurements and goals." />
               </div>
             )}
           </div>
@@ -237,11 +242,11 @@ export const TrainerClientsPage: React.FC = () => {
 
             <form onSubmit={handleAssignWorkout} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Select Workout Template *</label>
+                <label className="form-label">Select Workout Template *</label>
                 <select
                   value={selectedPlanId}
                   onChange={(e) => setSelectedPlanId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-select"
                 >
                   {workoutPlans.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -252,32 +257,28 @@ export const TrainerClientsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Execution Date *</label>
+                <label className="form-label">Execution Date *</label>
                 <input
                   type="date"
                   required
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Coach Notes & Intensity Guidance</label>
+                <label className="form-label">Coach Notes & Intensity Guidance</label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Focus on keeping elbows tucked on bench press. 2 min rest between top working sets."
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input !h-auto py-3"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={assigning}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
+              <button type="submit" disabled={assigning} className="btn btn-primary w-full">
                 {assigning ? 'Assigning...' : 'Assign to Athlete Portal'}
               </button>
             </form>

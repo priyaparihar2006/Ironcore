@@ -1,6 +1,7 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
-import { CreditCard, Check, Sparkles, Plus, Edit2, X, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Check, Edit2, X, CheckCircle2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 
 interface PlanConfig {
@@ -87,6 +88,10 @@ export const AdminMembershipsPage: React.FC = () => {
             <div key={i} className="h-64 bg-neutral-200 rounded-3xl"></div>
           ))}
         </div>
+      ) : plans.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={CreditCard} title="No membership tiers configured" body="Plan pricing and subscriber counts will appear here once tiers are set up." />
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((p) => (
@@ -154,42 +159,38 @@ export const AdminMembershipsPage: React.FC = () => {
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Monthly Price ($)</label>
+                  <label className="form-label">Monthly Price ($)</label>
                   <input
                     type="number"
                     required
                     value={monthlyPrice}
                     onChange={(e) => setMonthlyPrice(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                    className="form-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Annual Tier Price ($)</label>
+                  <label className="form-label">Annual Tier Price ($)</label>
                   <input
                     type="number"
                     required
                     value={annualPrice}
                     onChange={(e) => setAnnualPrice(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                    className="form-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Tier Pitch / Summary</label>
+                <label className="form-label">Tier Pitch / Summary</label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input !h-auto py-3"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
+              <button type="submit" disabled={saving} className="btn btn-primary w-full">
                 {saving ? 'Updating...' : 'Save Pricing Changes'}
               </button>
             </form>

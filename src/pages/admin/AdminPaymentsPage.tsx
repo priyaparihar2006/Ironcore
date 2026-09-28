@@ -1,8 +1,17 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
-import { DollarSign, CreditCard, ArrowDownRight, CheckCircle2, Download } from 'lucide-react';
+import { CreditCard, Receipt } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { UserPaymentRecord } from '../../types';
+
+function statusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (status === 'PAID') return 'success';
+  if (status === 'PENDING') return 'warning';
+  if (status === 'FAILED') return 'danger';
+  return 'neutral';
+}
 
 export const AdminPaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<UserPaymentRecord[]>([]);
@@ -39,6 +48,10 @@ export const AdminPaymentsPage: React.FC = () => {
         <div className="space-y-3 animate-pulse">
           <div className="h-64 bg-neutral-200 rounded-3xl"></div>
         </div>
+      ) : payments.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={Receipt} title="No transactions yet" body="Payments will appear here once members start subscribing or upgrading." />
+        </div>
       ) : (
         <div className="card overflow-hidden !p-0">
           <div className="p-card border-b border-neutral-100 flex items-center justify-between">
@@ -47,32 +60,32 @@ export const AdminPaymentsPage: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="table-clean">
               <thead>
-                <tr className="bg-neutral-50/80 text-[var(--color-text-muted)] uppercase font-bold border-b border-neutral-100">
-                  <th className="py-4 px-6">Transaction ID</th>
-                  <th className="py-4 px-6">Tier Plan</th>
-                  <th className="py-4 px-6">Date</th>
-                  <th className="py-4 px-6">Amount</th>
-                  <th className="py-4 px-6">Payment Method</th>
-                  <th className="py-4 px-6">Status</th>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Tier Plan</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Payment Method</th>
+                  <th>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody>
                 {payments.map((p) => (
                   <tr key={p.id} className="hover:bg-neutral-50/50">
-                    <td className="py-4 px-6 font-mono text-[var(--color-text-muted)] font-bold">{p.id}</td>
-                    <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{p.planName} Membership</td>
-                    <td className="py-4 px-6 text-neutral-600">{p.date}</td>
-                    <td className="py-4 px-6 font-bold text-emerald-700 font-mono">${p.amount.toFixed(2)}</td>
-                    <td className="py-4 px-6 text-neutral-600 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-[var(--color-text-muted)]" />
-                      <span>{p.paymentMethod}</span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800">
-                        {p.status}
+                    <td className="font-mono text-[var(--color-text-muted)] font-bold">{p.id}</td>
+                    <td className="font-bold text-[var(--color-text-main)]">{p.planName} Membership</td>
+                    <td className="text-neutral-600">{p.date}</td>
+                    <td className="font-bold text-emerald-700 font-mono">${p.amount.toFixed(2)}</td>
+                    <td className="text-neutral-600">
+                      <span className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-[var(--color-text-muted)]" />
+                        {p.paymentMethod}
                       </span>
+                    </td>
+                    <td>
+                      <Badge tone={statusTone(p.status)}>{p.status}</Badge>
                     </td>
                   </tr>
                 ))}

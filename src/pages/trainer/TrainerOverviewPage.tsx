@@ -4,9 +4,19 @@ import { Users, Calendar, Dumbbell, AlertCircle } from 'lucide-react';
 import { PageHeader } from '../../components/dashboard/PageHeader';
 import { KpiCard } from '../../components/dashboard/KpiCard';
 import { Card } from '../../components/dashboard/Card';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import { BarChart } from '../../components/charts/BarChart';
 import { apiRequest } from '../../lib/api';
 import { BookingSession, UserProfileData } from '../../types';
+
+interface ClientProgress {
+  userId: string;
+  name: string;
+  /** null when the client has no workout assignments yet. */
+  workoutCompletionPercent: number | null;
+  /** null when fewer than two progress entries are on file. */
+  weightChangeKg: number | null;
+}
 
 interface TrainerOverviewData {
   stats: {
@@ -16,7 +26,8 @@ interface TrainerOverviewData {
   };
   clients: UserProfileData[];
   todaySessions: BookingSession[];
-  upcomingSessions: BookingSession[];
+  upcomingSessions?: BookingSession[];
+  clientProgress?: ClientProgress[];
 }
 
 /** Confirmed-session counts for today and the next 6 days, from real booking dates. */
@@ -81,7 +92,8 @@ export const TrainerOverviewPage: React.FC = () => {
     );
   }
 
-  const { stats, clients, todaySessions, upcomingSessions } = data;
+  const { stats, clients, todaySessions, upcomingSessions, clientProgress } = data;
+  const progressRows = clientProgress ?? [];
 
   return (
     <div className="space-y-section">
@@ -133,28 +145,52 @@ export const TrainerOverviewPage: React.FC = () => {
         </Card>
       </div>
 
-      <Card title="Today's Sessions" subtitle="Floor reservations and consultations" link={{ to: '/trainer/schedule', label: 'Full schedule' }}>
+      <Card title="Today's Schedule" subtitle="Floor reservations and consultations" link={{ to: '/trainer/schedule', label: 'View Schedule' }}>
         {todaySessions.length === 0 ? (
-          <div className="py-10 text-center text-[var(--color-text-muted)]">
-            <Calendar className="w-8 h-8 mx-auto text-neutral-300 mb-2" />
-            <p className="text-sm">No sessions booked for today.</p>
-          </div>
+          <EmptyState icon={Calendar} title="No sessions today" body="Your confirmed bookings for today will appear here." />
         ) : (
           <div className="divide-y divide-[var(--color-border-main)]">
             {todaySessions.map((s) => (
-              <div key={s.id} className="py-3 first:pt-0 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-[var(--color-text-main)]">{s.sessionType}</div>
-                  <div className="text-xs text-[var(--color-text-muted)] truncate">
-                    Client ID: <span className="font-mono">{s.userId}</span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-mono font-medium text-[var(--color-text-main)] block">{s.timeSlot}</span>
-                  <span className="text-xs uppercase text-emerald-700">{s.status}</span>
+              <div key={s.id} className="py-3 first:pt-0 flex items-center gap-4">
+                <span className="text-sm font-mono font-semibold text-[var(--color-text-main)] w-16 shrink-0">{s.timeSlot}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[var(--color-text-main)] truncate">{s.userName}</div>
+                  <div className="text-xs text-[var(--color-text-muted)] truncate">{s.sessionType}</div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </Card>
+
+      <Card title="Member Progress" subtitle="Workout completion and weight change on file">
+        {progressRows.length === 0 ? (
+          <EmptyState icon={Users} title="No athletes yet" body="Progress for your assigned athletes will appear here once they start logging." />
+        ) : (
+          <div className="overflow-x-auto -mx-1">
+            <table className="table-clean">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Workout Completion</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {progressRows.map((c) => (
+                  <tr key={c.userId}>
+                    <td className="font-medium text-[var(--color-text-main)]">{c.name}</td>
+                    <td>{c.workoutCompletionPercent !== null ? `${c.workoutCompletionPercent}%` : '—'}</td>
+                    <td className={
+                      c.weightChangeKg === null ? 'text-[var(--color-text-muted)]'
+                        : c.weightChangeKg < 0 ? 'text-emerald-700' : c.weightChangeKg > 0 ? 'text-orange-700' : 'text-[var(--color-text-muted)]'
+                    }>
+                      {c.weightChangeKg === null ? 'Not enough data' : `${c.weightChangeKg > 0 ? '+' : ''}${c.weightChangeKg} kg`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </Card>

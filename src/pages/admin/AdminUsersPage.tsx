@@ -1,4 +1,6 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import { ValidationInput, ValidationSelect, useFormValidation } from '../../components/ValidationInput';
 import { emailError, nameError, passwordError, choiceError } from '../../lib/validation';
 import React, { useEffect, useState } from 'react';
@@ -157,7 +159,7 @@ export const AdminUsersPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by athlete name or email..."
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium focus:ring-2 focus:ring-blue-500"
+            className="form-input w-full pl-10"
           />
         </div>
 
@@ -183,24 +185,32 @@ export const AdminUsersPage: React.FC = () => {
             <div key={i} className="h-16 bg-neutral-200 rounded-lg"></div>
           ))}
         </div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            icon={Users}
+            title="No matching accounts"
+            body={search || roleFilter !== 'ALL' ? 'Try a different search term or role filter.' : 'No accounts have been created yet.'}
+          />
+        </div>
       ) : (
         <div className="card overflow-hidden !p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="table-clean">
               <thead>
-                <tr className="bg-neutral-50/80 text-[var(--color-text-muted)] uppercase font-bold border-b border-neutral-100">
-                  <th className="py-4 px-6">User / Identity</th>
-                  <th className="py-4 px-6">Email Address</th>
-                  <th className="py-4 px-6">System Role</th>
-                  <th className="py-4 px-6">Account Status</th>
-                  <th className="py-4 px-6">Joined Date</th>
-                  <th className="py-4 px-6 text-right">Administrative Actions</th>
+                <tr>
+                  <th>User / Identity</th>
+                  <th>Email Address</th>
+                  <th>System Role</th>
+                  <th>Account Status</th>
+                  <th>Joined Date</th>
+                  <th className="text-right">Administrative Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100">
+              <tbody>
                 {filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-neutral-50/50">
-                    <td className="py-4 px-6">
+                    <td>
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-[var(--color-primary)]/20 text-[var(--color-text-main)] font-semibold text-xs flex items-center justify-center shrink-0">
                           {u.name.charAt(0)}
@@ -211,32 +221,17 @@ export const AdminUsersPage: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-neutral-600 font-medium">{u.email}</td>
-                    <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                        u.role === 'ADMIN'
-                          ? 'bg-red-100 text-red-900'
-                          : u.role === 'TRAINER'
-                          ? 'bg-purple-100 text-[var(--color-text-main)]'
-                          : 'bg-neutral-100 text-neutral-700'
-                      }`}>
-                        {u.role}
-                      </span>
+                    <td className="text-neutral-600 font-medium">{u.email}</td>
+                    <td>
+                      <Badge tone={u.role === 'ADMIN' ? 'danger' : u.role === 'TRAINER' ? 'info' : 'neutral'}>{u.role}</Badge>
                     </td>
-                    <td className="py-4 px-6">
-                      <button
-                        onClick={() => handleToggleStatus(u)}
-                        className={`px-3 py-1 rounded-full text-xs font-bold uppercase cursor-pointer ${
-                          u.status === 'ACTIVE'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-neutral-200 text-neutral-600'
-                        }`}
-                      >
+                    <td>
+                      <button onClick={() => handleToggleStatus(u)} className={`badge cursor-pointer ${u.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
                         {u.status}
                       </button>
                     </td>
-                    <td className="py-4 px-6 text-[var(--color-text-muted)]">{u.createdAt}</td>
-                    <td className="py-4 px-6 text-right">
+                    <td className="text-[var(--color-text-muted)]">{u.createdAt}</td>
+                    <td className="text-right">
                       <div className="inline-flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -282,19 +277,19 @@ export const AdminUsersPage: React.FC = () => {
             {formError && <p role="alert" className="text-sm text-red-700 mb-3">{formError}</p>}
             <form noValidate onSubmit={handleCreateOrUpdate} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Full Name *</label>
+                <label className="form-label">Full Name *</label>
                 <ValidationInput {...validation.field('name', 'Full name')}
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Taylor Vance"
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-input"
                 maxLength={100} />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Email Address *</label>
+                <label className="form-label">Email Address *</label>
                 <ValidationInput {...validation.field('email', 'Email address')}
                   type="email"
                   required
@@ -302,30 +297,30 @@ export const AdminUsersPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="taylor@ironcore.fit"
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium disabled:bg-neutral-100 disabled:text-[var(--color-text-muted)]"
+                  className="form-input disabled:bg-neutral-100 disabled:text-[var(--color-text-muted)]"
                 maxLength={254} autoComplete="email" />
               </div>
 
               {!editingUser && (
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Initial Password *</label>
+                  <label className="form-label">Initial Password *</label>
                   <ValidationInput {...validation.field('password', 'Password')}
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                    className="form-input"
                   maxLength={256} autoComplete="new-password" />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Role Assignment *</label>
+                <label className="form-label">Role Assignment *</label>
                 <ValidationSelect {...validation.field('role', 'role')}
                   value={role}
                   onChange={(e) => setRole(e.target.value as UserRole)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-select"
                 >
                   <option value="USER">USER (Standard Athlete)</option>
                   <option value="TRAINER">TRAINER (Coach Portal Access)</option>
@@ -333,11 +328,7 @@ export const AdminUsersPage: React.FC = () => {
                 </ValidationSelect>
               </div>
 
-              <button
-                type="submit"
-                disabled={creating}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer mt-4"
-              >
+              <button type="submit" disabled={creating} className="btn btn-primary w-full mt-4">
                 {creating ? 'Saving...' : editingUser ? 'Update User' : 'Create User Account'}
               </button>
             </form>

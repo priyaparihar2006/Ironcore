@@ -47,8 +47,9 @@ async function mockApi(page: Page, role: 'USER' | 'TRAINER' | 'ADMIN') {
       result = {
         stats: { assignedClientsCount: 12, todaySessionsCount: 1, totalPlansCount: 8 },
         clients: [{ userId: 'c1', name: 'Jo Lee', fitnessGoal: 'Endurance' }],
-        todaySessions: [{ id: 's1', userId: 'c1', sessionType: '1-on-1 PT', date: today, timeSlot: '10:00 AM', status: 'CONFIRMED' }],
-        upcomingSessions: [{ id: 's1', userId: 'c1', sessionType: '1-on-1 PT', date: today, timeSlot: '10:00 AM', status: 'CONFIRMED' }],
+        todaySessions: [{ id: 's1', userId: 'c1', userName: 'Jo Lee', trainerId: 't1', trainerName: 'Coach', sessionType: '1-on-1 PT', date: today, timeSlot: '10:00 AM', status: 'CONFIRMED', location: 'Studio A' }],
+        upcomingSessions: [{ id: 's1', userId: 'c1', userName: 'Jo Lee', trainerId: 't1', trainerName: 'Coach', sessionType: '1-on-1 PT', date: today, timeSlot: '10:00 AM', status: 'CONFIRMED', location: 'Studio A' }],
+        clientProgress: [{ userId: 'c1', name: 'Jo Lee', workoutCompletionPercent: 80, weightChangeKg: -1.2 }],
       };
     }
     await route.fulfill({ json: result });

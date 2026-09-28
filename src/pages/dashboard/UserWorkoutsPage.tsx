@@ -1,8 +1,62 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
-import { Dumbbell, CheckCircle2, Clock, Calendar, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Dumbbell, CheckCircle2, Clock, Calendar, AlertCircle, ChevronDown, ChevronUp, Flame, Play } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
-import { WorkoutAssignmentData } from '../../types';
+import { ExerciseItem, WorkoutAssignmentData } from '../../types';
+
+// Muscle groups cycle through a fixed, non-random set of accent tints for the
+// exercise card's image slot (there's no real exercise photography to show).
+const MUSCLE_TINTS = [
+  'bg-blue-50 text-blue-500',
+  'bg-orange-50 text-orange-500',
+  'bg-emerald-50 text-emerald-500',
+  'bg-purple-50 text-purple-500',
+  'bg-rose-50 text-rose-500',
+];
+function tintFor(muscle: string) {
+  let hash = 0;
+  for (let i = 0; i < muscle.length; i++) hash = (hash * 31 + muscle.charCodeAt(i)) >>> 0;
+  return MUSCLE_TINTS[hash % MUSCLE_TINTS.length];
+}
+
+/** Rough session length from real logged sets/reps/rest — ~3s per rep plus each set's rest, never a fabricated fixed number. */
+function estimateMinutes(exercises: ExerciseItem[]): number {
+  const seconds = exercises.reduce((total, ex) => total + ex.sets * (ex.reps * 3 + ex.restSeconds), 0);
+  return Math.max(5, Math.round(seconds / 60));
+}
+
+function statusBadge(status: WorkoutAssignmentData['status']) {
+  if (status === 'COMPLETED') return <Badge tone="success" dot>Completed</Badge>;
+  if (status === 'IN_PROGRESS') return <Badge tone="info" dot>In Progress</Badge>;
+  return <Badge tone="warning" dot>Pending</Badge>;
+}
+
+const ExerciseCard: React.FC<{ exercise: ExerciseItem }> = ({ exercise }) => {
+  return (
+    <div className="rounded-xl border border-[var(--color-border-main)] overflow-hidden bg-[var(--color-card-bg)]">
+      <div className={`aspect-video flex items-center justify-center ${tintFor(exercise.targetMuscle)}`}>
+        <Dumbbell size={28} />
+      </div>
+      <div className="p-4">
+        <h4 className="text-sm font-bold text-[var(--color-text-main)]">{exercise.name}</h4>
+        <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{exercise.targetMuscle}</p>
+        <div className="flex items-center justify-between mt-3">
+          <span className="text-sm font-semibold text-[var(--color-text-main)]">
+            {exercise.sets} sets × {exercise.reps} reps
+          </span>
+          <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+            <Clock size={12} /> {exercise.restSeconds}s rest
+          </span>
+        </div>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] mt-1">
+          {exercise.weightKg ? `${exercise.weightKg} kg` : 'Bodyweight'}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export const UserWorkoutsPage: React.FC = () => {
   const [workouts, setWorkouts] = useState<WorkoutAssignmentData[]>([]);
@@ -46,7 +100,10 @@ export const UserWorkoutsPage: React.FC = () => {
     }
   };
 
-  const filteredWorkouts = workouts.filter((w) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayWorkout = workouts.find((w) => w.scheduledDate === todayStr && w.status !== 'COMPLETED');
+  const otherWorkouts = workouts.filter((w) => w.id !== todayWorkout?.id);
+  const filteredWorkouts = otherWorkouts.filter((w) => {
     if (filter === 'ALL') return true;
     return w.status === filter;
   });
@@ -86,140 +143,155 @@ export const UserWorkoutsPage: React.FC = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="p-card rounded-3xl bg-red-50 border border-red-200 text-red-700 flex flex-col items-center text-center">
+        <div className="card bg-red-50 border-red-200 text-red-700 flex flex-col items-center text-center">
           <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
           <h2 className="text-lg font-bold">Error loading workouts</h2>
           <p className="text-sm text-red-600 mb-4">{error}</p>
-          <button
-            onClick={fetchWorkouts}
-            className="px-6 py-2 rounded-xl bg-red-600 text-white text-xs font-bold"
-          >
+          <button onClick={fetchWorkouts} className="btn bg-red-600 text-white">
             Retry
           </button>
         </div>
-      ) : filteredWorkouts.length === 0 ? (
-        <div className="card p-12 text-center">
-          <Dumbbell className="w-12 h-12 mx-auto text-neutral-300 mb-3" />
-          <h3 className="text-lg font-bold text-[var(--color-text-main)]">No workouts assigned yet</h3>
-          <p className="text-xs text-[var(--color-text-muted)] max-w-sm mx-auto mt-1">
-            Your personal trainer will configure and assign your next progressive overload phase soon.
-          </p>
+      ) : workouts.length === 0 ? (
+        <div className="card">
+          <EmptyState
+            icon={Dumbbell}
+            title="No workouts yet"
+            body="Your trainer hasn't assigned a routine yet — it'll appear here as soon as they do."
+          />
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredWorkouts.map((w) => {
-            const isExpanded = expandedId === w.id;
-            return (
-              <div
-                key={w.id}
-                className="card overflow-hidden transition-all !p-0"
-              >
-                {/* Top Summary Bar */}
-                <div
-                  onClick={() => setExpandedId(isExpanded ? null : w.id)}
-                  className="p-card sm:p-card flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer hover:bg-neutral-50/50"
-                >
-                  <div className="flex items-start gap-6">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      w.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-[var(--color-brand-bg)] text-purple-600'
-                    }`}>
-                      <Dumbbell className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-bold text-[var(--color-text-main)]">{w.workoutTitle}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
-                          w.status === 'COMPLETED'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {w.status}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-6 text-xs text-[var(--color-text-muted)] mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" /> Scheduled: {w.scheduledDate}
-                        </span>
-                        <span>•</span>
-                        <span>Coach: {w.assignedByTrainerName || 'IronCore Staff'}</span>
-                        <span>•</span>
-                        <span>{w.exercises.length} Exercises</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    {w.status !== 'COMPLETED' ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkComplete(w.id);
-                        }}
-                        disabled={actionLoading === w.id}
-                        className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold flex items-center gap-2 hover:bg-neutral-800 transition-colors cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>{actionLoading === w.id ? 'Saving...' : 'Mark Complete'}</span>
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4" /> Finished
-                      </span>
-                    )}
-                    <button className="text-[var(--color-text-muted)] hover:text-neutral-700">
-                      {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </button>
-                  </div>
+        <div className="space-y-section">
+          {/* Today's Workout — energetic hero, mirrors the athlete's daily focus. */}
+          {todayWorkout && (
+            <div className="card bg-gradient-to-br from-[#080512] via-[#1a122e] to-[#2e1a50] text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-purple-200 text-xs font-bold uppercase tracking-wider mb-3">
+                  <Flame size={14} /> Today's Workout
                 </div>
+                <h2 className="text-2xl font-bold tracking-tight">{todayWorkout.workoutTitle}</h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/70 mt-2">
+                  <span>{todayWorkout.exercises.length} Exercises</span>
+                  <span>·</span>
+                  <span>~{estimateMinutes(todayWorkout.exercises)} min</span>
+                  <span>·</span>
+                  <span>Coach {todayWorkout.assignedByTrainerName || 'IronCore Staff'}</span>
+                </div>
+                <button
+                  onClick={() => setExpandedId(todayWorkout.id)}
+                  className="btn btn-primary mt-6"
+                >
+                  <Play size={16} />
+                  <span>{todayWorkout.status === 'IN_PROGRESS' ? 'Continue Workout' : 'Start Workout'}</span>
+                </button>
 
-                {/* Expanded Exercises Breakdown */}
-                {isExpanded && (
-                  <div className="px-6 pb-6 pt-2 border-t border-neutral-100 bg-neutral-50/40">
-                    {w.notes && (
-                      <div className="mb-4 p-4 rounded-lg bg-white border border-[var(--color-border-main)]/80 text-xs text-neutral-700">
-                        <span className="font-bold text-[var(--color-text-main)]">Trainer Instructions: </span>
-                        {w.notes}
-                      </div>
+                {expandedId === todayWorkout.id && (
+                  <div className="mt-8 pt-6 border-t border-white/10">
+                    {todayWorkout.notes && (
+                      <p className="text-sm text-white/70 italic mb-4">"{todayWorkout.notes}"</p>
                     )}
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-[var(--color-border-main)]/80 text-[var(--color-text-muted)] font-bold uppercase tracking-wider">
-                            <th className="pb-3">#</th>
-                            <th className="pb-3">Exercise Name</th>
-                            <th className="pb-3">Target Muscle</th>
-                            <th className="pb-3">Sets</th>
-                            <th className="pb-3">Reps</th>
-                            <th className="pb-3">Working Load</th>
-                            <th className="pb-3">Rest</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-200/50">
-                          {w.exercises.map((ex, idx) => (
-                            <tr key={ex.id || idx} className="hover:bg-white/60">
-                              <td className="py-3 font-mono text-[var(--color-text-muted)] font-bold">{idx + 1}</td>
-                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.name}</td>
-                              <td className="py-3 text-neutral-600">{ex.targetMuscle}</td>
-                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.sets}</td>
-                              <td className="py-3 font-bold text-[var(--color-text-main)]">{ex.reps}</td>
-                              <td className="py-3 font-bold text-[var(--color-text-main)]">
-                                {ex.weightKg ? `${ex.weightKg} kg` : 'Bodyweight'}
-                              </td>
-                              <td className="py-3 text-[var(--color-text-muted)] flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-[var(--color-text-muted)]" />
-                                <span>{ex.restSeconds}s</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {todayWorkout.exercises.map((ex, idx) => (
+                        <ExerciseCard key={ex.id || idx} exercise={ex} />
+                      ))}
                     </div>
+                    <button
+                      onClick={() => handleMarkComplete(todayWorkout.id)}
+                      disabled={actionLoading === todayWorkout.id}
+                      className="btn btn-primary w-full mt-6"
+                    >
+                      <CheckCircle2 size={16} />
+                      <span>{actionLoading === todayWorkout.id ? 'Saving...' : 'Mark Workout Complete'}</span>
+                    </button>
                   </div>
                 )}
               </div>
-            );
-          })}
+            </div>
+          )}
+
+          {filteredWorkouts.length === 0 ? (
+            <div className="card">
+              <EmptyState
+                icon={Dumbbell}
+                title="No routines in this view"
+                body="Try a different filter, or check back once your trainer assigns more workouts."
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredWorkouts.map((w) => {
+                const isExpanded = expandedId === w.id;
+                return (
+                  <div key={w.id} className="card overflow-hidden transition-all !p-0">
+                    {/* Top Summary Bar */}
+                    <div
+                      onClick={() => setExpandedId(isExpanded ? null : w.id)}
+                      className="p-card sm:p-card flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer hover:bg-neutral-50/50"
+                    >
+                      <div className="flex items-start gap-6">
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          w.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600' : 'bg-[var(--color-brand-bg)] text-purple-600'
+                        }`}>
+                          <Dumbbell className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-[var(--color-text-main)]">{w.workoutTitle}</h3>
+                            {statusBadge(w.status)}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-text-muted)] mt-1.5">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" /> {w.scheduledDate}
+                            </span>
+                            <span>{w.exercises.length} Exercises</span>
+                            <span>~{estimateMinutes(w.exercises)} min</span>
+                            <span>Coach {w.assignedByTrainerName || 'IronCore Staff'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 self-end sm:self-center">
+                        {w.status !== 'COMPLETED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkComplete(w.id);
+                            }}
+                            disabled={actionLoading === w.id}
+                            className="btn btn-primary btn-sm"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>{actionLoading === w.id ? 'Saving...' : 'Mark Complete'}</span>
+                          </button>
+                        )}
+                        <button className="text-[var(--color-text-muted)] hover:text-neutral-700">
+                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Exercises Breakdown */}
+                    {isExpanded && (
+                      <div className="px-6 pb-6 pt-2 border-t border-neutral-100 bg-neutral-50/40">
+                        {w.notes && (
+                          <div className="mb-4 p-4 rounded-lg bg-white border border-[var(--color-border-main)]/80 text-xs text-neutral-700">
+                            <span className="font-bold text-[var(--color-text-main)]">Trainer Instructions: </span>
+                            {w.notes}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {w.exercises.map((ex, idx) => (
+                            <ExerciseCard key={ex.id || idx} exercise={ex} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

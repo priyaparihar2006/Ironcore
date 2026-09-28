@@ -19,7 +19,7 @@ for (const [role, path] of [['USER', '/dashboard'], ['TRAINER', '/trainer'], ['A
       };
       if (url.endsWith('/trainer/summary')) result = {
         stats: { assignedClientsCount: 12, todaySessionsCount: 3, totalPlansCount: 8 },
-        clients: [], todaySessions: [], upcomingSessions: [],
+        clients: [], todaySessions: [], upcomingSessions: [], clientProgress: [],
       };
       if (url.endsWith('/admin/overview')) result = {
         stats: { totalUsers: 120, activeMembers: 96, totalRevenue: 6400, activeTrainers: 8, todayCheckins: 24 },

@@ -1,6 +1,8 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { Badge } from '../../components/dashboard/Badge';
+import { EmptyState } from '../../components/dashboard/EmptyState';
 import React, { useEffect, useState } from 'react';
-import { Calendar, Clock, User, Plus, X, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Plus, X, Trash2 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { BookingSession } from '../../types';
 
@@ -124,16 +126,13 @@ export const UserBookingsPage: React.FC = () => {
             </h2>
 
             {upcomingBookings.length === 0 ? (
-              <div className="card text-center">
-                <Calendar className="w-10 h-10 mx-auto text-neutral-300 mb-2" />
-                <p className="text-sm font-bold text-neutral-700">No upcoming sessions booked</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">Connect with our certified master coaches for targeted form evaluation.</p>
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="mt-4 px-4 py-2 rounded-xl bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold cursor-pointer"
-                >
-                  Schedule Your Next Session
-                </button>
+              <div className="card">
+                <EmptyState
+                  icon={Calendar}
+                  title="No upcoming sessions booked"
+                  body="Connect with our certified master coaches for targeted form evaluation."
+                  action={{ label: 'Schedule Your Next Session', onClick: () => setShowModal(true) }}
+                />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -144,13 +143,11 @@ export const UserBookingsPage: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="px-3 py-1 rounded-full bg-purple-100 text-[var(--color-text-main)] text-xs font-bold uppercase">
-                          {b.status}
-                        </span>
+                        <Badge tone="info">{b.status}</Badge>
                         <button
                           onClick={() => handleCancelBooking(b.id)}
                           disabled={cancellingId === b.id}
-                          className="text-[var(--color-text-muted)] hover:text-red-600 text-xs flex items-center gap-1 cursor-pointer"
+                          className="btn btn-ghost btn-sm text-[var(--color-text-muted)] hover:text-red-600"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>Cancel</span>
@@ -192,29 +189,25 @@ export const UserBookingsPage: React.FC = () => {
                 Completed & Past Sessions History
               </h2>
               <div className="card overflow-hidden !p-0">
-                <table className="w-full text-left text-xs">
+                <table className="table-clean">
                   <thead>
-                    <tr className="bg-neutral-50/80 text-[var(--color-text-muted)] uppercase font-bold border-b border-neutral-100">
-                      <th className="py-3 px-6">Session Type</th>
-                      <th className="py-3 px-6">Trainer</th>
-                      <th className="py-3 px-6">Date</th>
-                      <th className="py-3 px-6">Time</th>
-                      <th className="py-3 px-6">Status</th>
+                    <tr>
+                      <th>Session Type</th>
+                      <th>Trainer</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100">
+                  <tbody>
                     {pastBookings.map((b) => (
                       <tr key={b.id} className="text-neutral-700">
-                        <td className="py-4 px-6 font-bold text-[var(--color-text-main)]">{b.sessionType}</td>
-                        <td className="py-4 px-6">{b.trainerName}</td>
-                        <td className="py-4 px-6">{b.date}</td>
-                        <td className="py-4 px-6">{b.timeSlot}</td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            b.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-neutral-100 text-[var(--color-text-muted)]'
-                          }`}>
-                            {b.status}
-                          </span>
+                        <td className="font-bold text-[var(--color-text-main)]">{b.sessionType}</td>
+                        <td>{b.trainerName}</td>
+                        <td>{b.date}</td>
+                        <td>{b.timeSlot}</td>
+                        <td>
+                          <Badge tone={b.status === 'COMPLETED' ? 'success' : 'neutral'}>{b.status}</Badge>
                         </td>
                       </tr>
                     ))}
@@ -239,11 +232,11 @@ export const UserBookingsPage: React.FC = () => {
 
             <form onSubmit={handleBookSession} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Select Coach *</label>
+                <label className="form-label">Select Coach *</label>
                 <select
                   value={trainerId}
                   onChange={(e) => setTrainerId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-bold"
+                  className="form-input"
                 >
                   {trainers.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -254,11 +247,11 @@ export const UserBookingsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Session Specialty</label>
+                <label className="form-label">Session Specialty</label>
                 <select
                   value={sessionType}
                   onChange={(e) => setSessionType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input"
                 >
                   <option value="1-on-1 Hypertrophy Coaching">1-on-1 Hypertrophy Coaching</option>
                   <option value="Olympic Barbell & Deadlift Analysis">Olympic Barbell & Deadlift Analysis</option>
@@ -269,22 +262,22 @@ export const UserBookingsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Date *</label>
+                  <label className="form-label">Date *</label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                    className="form-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Time Slot *</label>
+                  <label className="form-label">Time Slot *</label>
                   <select
                     value={timeSlot}
                     onChange={(e) => setTimeSlot(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                    className="form-input"
                   >
                     <option value="08:00 AM - 09:00 AM">08:00 AM - 09:00 AM</option>
                     <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
@@ -296,21 +289,17 @@ export const UserBookingsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[var(--color-text-main)] mb-1">Training Objective / Notes</label>
+                <label className="form-label">Training Objective / Notes</label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Focus on squat depth and hip drive mechanics."
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-main)] text-xs font-medium"
+                  className="form-input"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-4 rounded-lg bg-[var(--color-primary)] text-[var(--color-text-main)] text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
+              <button type="submit" disabled={submitting} className="btn btn-primary w-full">
                 {submitting ? 'Confirming with Coach...' : 'Confirm Session Booking'}
               </button>
             </form>

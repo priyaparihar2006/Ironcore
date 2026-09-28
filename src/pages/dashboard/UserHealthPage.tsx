@@ -1,4 +1,5 @@
 import { PageHeader } from '../../components/dashboard/PageHeader';
+import { KpiCard } from '../../components/dashboard/KpiCard';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Sparkles, FileText, Download, ShieldCheck } from 'lucide-react';
@@ -33,7 +34,7 @@ const defaults: HealthPreferences = {
 };
 
 export function UserHealthPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [data, setData] = useState<HealthDashboard>();
   const [form, setForm] = useState<HealthPreferences>(defaults);
   const [proposal, setProposal] = useState<TargetVersion>();
@@ -113,6 +114,25 @@ export function UserHealthPage() {
           {data?.aiAvailable ? 'AI connected' : 'AI awaiting server configuration'}
         </span>
       </div>
+
+      {/* Health Overview: a calm snapshot from your saved body composition — no
+          fabricated vitals (this app has no heart-rate tracking). The trend
+          itself lives on the Progress page, linked below, rather than
+          duplicating that chart here. */}
+      {profile && (
+        <>
+          <div className="kpi-grid">
+            <KpiCard label="Weight" value={profile.currentWeight} unit="kg" />
+            <KpiCard
+              label="BMI"
+              value={profile.currentWeight && profile.height ? (profile.currentWeight / (profile.height / 100) ** 2).toFixed(1) : '—'}
+            />
+            <KpiCard label="Body Fat" value={profile.bodyFatPercentage ?? '—'} unit="%" />
+            <KpiCard label="Muscle Mass" value={profile.muscleMass ?? '—'} unit="%" />
+          </div>
+          <Link to="/dashboard/progress" className="card-link">See your weight trend on Progress →</Link>
+        </>
+      )}
       {error && (
         <div role="alert" className="rounded-lg bg-red-50 p-card text-red-800">
           {error}{' '}

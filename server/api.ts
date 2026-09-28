@@ -946,6 +946,24 @@ apiRouter.get(
       (w) => w.createdByTrainerId === trainerId || req.user!.role === 'ADMIN'
     ).length;
 
+    // Per-client real progress for the "Member Progress" table: workout
+    // completion rate from actual assignment statuses, and weight change from
+    // actual logged progress entries (oldest vs newest on file). No
+    // attendance/check-in figure here — the app has no real check-in
+    // tracking (see /admin/overview's todayCheckins), so it isn't fabricated.
+    const clientProgress = trainerClients.map((c) => {
+      const assignments = db.workoutAssignments.filter((w) => w.userId === c.id);
+      const workoutCompletionPercent = assignments.length
+        ? Math.round((assignments.filter((w) => w.status === 'COMPLETED').length / assignments.length) * 100)
+        : null;
+      const records = db.progressRecords
+        .filter((p) => p.userId === c.id)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      const weightChangeKg =
+        records.length >= 2 ? Number((records[records.length - 1].weightKg - records[0].weightKg).toFixed(1)) : null;
+      return { userId: c.id, name: c.name, workoutCompletionPercent, weightChangeKg };
+    });
+
     // Field names match what TrainerOverviewPage's KpiCards read
     // (assignedClientsCount, totalPlansCount) — previously this returned
     // totalClients/activeClients instead, so those cards always rendered blank.
@@ -961,6 +979,7 @@ apiRouter.get(
       todaySessions,
       upcomingSessions,
       clients: trainerClients.map(sanitizeUser),
+      clientProgress,
     });
   }
 );
@@ -1541,7 +1560,16 @@ apiRouter.get(
   requireRole(['ADMIN']),
   async (_req, res: Response): Promise<void> => {
     const db = await getDatabase();
-    res.json({ trainers: db.trainers });
+    // Field names match what the admin trainer views read (specialization,
+    // assignedClientsCount) — the stored records use specialty/clientCount, so
+    // returning db.trainers unmapped left those fields rendering as blank.
+    res.json({
+      trainers: db.trainers.map((t) => ({
+        ...t,
+        specialization: t.specialty,
+        assignedClientsCount: t.clientCount,
+      })),
+    });
   }
 );
 
