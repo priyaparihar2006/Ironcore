@@ -26,7 +26,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
           </div>
 
           {/* Hero Editorial Headline */}
-          <h1 className="font-display text-5xl sm:text-7xl lg:text-[84px] xl:text-[104px] font-bold leading-[0.9] tracking-tighter mb-8 text-[var(--color-text-main)]">
+          <h1 className="font-display text-[clamp(3rem,6vw,6.5rem)] font-bold leading-[0.9] tracking-tighter mb-8 text-[var(--color-text-main)]">
             Move Better.<br />Live Better.
           </h1>
 
@@ -64,10 +64,10 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             that only exists once the layout splits into two columns — is
             preserved exactly as designed. */}
         <div className="lg:col-span-6 flex flex-col items-center justify-center gap-8 sm:gap-8">
-          <div className="relative w-full max-w-[480px] sm:max-w-[540px] h-[520px] sm:h-[600px] flex items-center justify-center">
+          <div className="relative w-full max-w-[480px] sm:max-w-[540px] h-[min(520px,125vw)] sm:h-[min(600px,48vw)] flex items-center justify-center">
 
             {/* Pastel Inner Panel from Design */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] sm:w-[420px] h-[460px] sm:h-[550px] bg-gradient-to-b from-indigo-100 via-pink-100 to-cyan-50 rounded-lg shadow-inner" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%_-_24px)] max-w-[340px] sm:w-[420px] sm:max-w-none h-[min(460px,calc(100%_-_24px))] sm:h-[min(550px,calc(100%_-_24px))] bg-gradient-to-b from-indigo-100 via-pink-100 to-cyan-50 rounded-lg shadow-inner" />
 
             {/* Athlete Imagery framed inside the rounded shape with soft fade */}
             <div className="absolute bottom-0 right-0 w-full h-full flex items-end justify-center overflow-hidden rounded-lg">
@@ -76,14 +76,14 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
                   src={HERO_ATHLETE_IMAGE}
                   alt="Fit athletic trainer"
                   referrerPolicy="no-referrer"
-                  className="relative z-10 w-auto h-[92%] sm:h-[95%] max-h-[570px] object-contain drop-shadow-sm"
+                  className="relative z-10 w-auto h-[92%] sm:h-[95%] max-h-[570px] max-w-full object-contain drop-shadow-sm"
                 />
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F8F7FA] via-transparent to-transparent z-15 pointer-events-none" />
               </div>
             </div>
 
             {/* Floating Metric 1: Calories (Top Left) — desktop/laptop only */}
-            <div className="hidden lg:block absolute top-16 -left-8 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hidden xl:block absolute top-16 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 text-xl">
                   🔥
@@ -98,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 2: Strength (Bottom Right) — desktop/laptop only */}
-            <div className="hidden lg:block absolute bottom-28 -right-8 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hidden xl:block absolute bottom-28 right-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 text-xl">
                   🏋️
@@ -113,7 +113,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 3: Daily Steps (Right Center) — desktop/laptop only */}
-            <div className="hidden lg:flex absolute top-1/2 right-2 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-6 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hidden xl:flex absolute top-1/2 right-0 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-6 z-20 transition-transform hover:scale-105 duration-200">
               <div className="w-2 h-10 bg-emerald-400 rounded-full" />
               <div>
                 <div className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
@@ -126,7 +126,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 4: Weight (Bottom Left) — desktop/laptop only */}
-            <div className="hidden lg:flex absolute bottom-8 left-6 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hidden xl:flex absolute bottom-8 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
               <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-base">
                 ⚖️
               </div>
@@ -145,7 +145,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
           {/* Metric Grid — mobile & tablet only (below lg). Static, in normal
               document flow, so cards can never overlap each other or the
               image regardless of viewport width. */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-6 w-full max-w-[480px] sm:max-w-[540px] lg:hidden">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6 w-full max-w-[480px] sm:max-w-[540px] xl:hidden">
 
             {/* Calories */}
             <div className="w-full min-w-0 bg-white/90 backdrop-blur-xl p-3 sm:p-6 rounded-lg shadow-sm border border-white/50 transition-transform hover:scale-105 duration-200">
