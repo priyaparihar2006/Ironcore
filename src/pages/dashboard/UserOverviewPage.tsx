@@ -317,12 +317,12 @@ export const UserOverviewPage: React.FC = () => {
                     </div>
                     <div className="divide-y divide-neutral-200/60 max-h-48 overflow-y-auto pr-2">
                       {todayWorkout.exercises.slice(0, 4).map((ex, idx) => (
-                        <div key={ex.id || idx} className="py-2 flex items-center justify-between text-xs">
-                          <div>
+                        <div key={ex.id || idx} className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs">
+                          <div className="min-w-0 break-words">
                             <span className="font-bold text-[var(--color-text-main)]">{ex.name}</span>
                             <span className="text-xs text-[var(--color-text-muted)] ml-2">({ex.targetMuscle})</span>
                           </div>
-                          <div className="font-mono text-neutral-600 text-xs">
+                          <div className="font-mono text-neutral-600 text-xs sm:text-right">
                             {ex.sets} sets × {ex.reps} reps {ex.weightKg ? `@ ${ex.weightKg}kg` : ''}
                           </div>
                         </div>
