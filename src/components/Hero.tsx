@@ -83,7 +83,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 1: Calories (Top Left) — desktop/laptop only */}
-            <div className="hidden xl:block absolute top-16 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hero-floating-card hidden xl:block absolute top-16 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500 text-xl">
                   🔥
@@ -98,7 +98,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 2: Strength (Bottom Right) — desktop/laptop only */}
-            <div className="hidden xl:block absolute bottom-28 right-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hero-floating-card hidden xl:block absolute bottom-28 right-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 w-44 z-20 transition-transform hover:scale-105 duration-200">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-500 text-xl">
                   🏋️
@@ -113,7 +113,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 3: Daily Steps (Right Center) — desktop/laptop only */}
-            <div className="hidden xl:flex absolute top-1/2 right-0 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-6 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hero-floating-card hidden xl:flex absolute top-1/2 right-0 -translate-y-1/2 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-6 z-20 transition-transform hover:scale-105 duration-200">
               <div className="w-2 h-10 bg-emerald-400 rounded-full" />
               <div>
                 <div className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
@@ -126,7 +126,7 @@ export const Hero: React.FC<HeroProps> = ({ onJoinNow }) => {
             </div>
 
             {/* Floating Metric 4: Weight (Bottom Left) — desktop/laptop only */}
-            <div className="hidden xl:flex absolute bottom-8 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
+            <div className="hero-floating-card hidden xl:flex absolute bottom-8 left-0 bg-white/90 backdrop-blur-xl p-6 rounded-lg shadow-sm border border-white/50 items-center gap-3 z-20 transition-transform hover:scale-105 duration-200">
               <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 text-base">
                 ⚖️
               </div>
