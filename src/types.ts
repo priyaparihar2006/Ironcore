@@ -49,6 +49,7 @@ export interface PricingPlan {
   id: string;
   name: string;
   monthlyPrice: number;
+  semiAnnualPrice?: number;
   annualPrice: number;
   currency: string;
   description: string;

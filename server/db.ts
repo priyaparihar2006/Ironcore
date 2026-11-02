@@ -1,5 +1,14 @@
 import bcrypt from 'bcryptjs';
-import { hydrateAll, persistAll, seedIfEmpty } from './postgres.js';
+import {
+  hydrateAll as pgHydrateAll,
+  persistAll as pgPersistAll,
+  seedIfEmpty as pgSeedIfEmpty,
+} from './postgres.js';
+import {
+  hydrateAll as sqliteHydrateAll,
+  persistAll as sqlitePersistAll,
+  migrateFromJsonIfNeeded,
+} from './sqlite.js';
 import type {
   User,
   UserProfile,
@@ -411,52 +420,53 @@ export function generateSeedData(): DatabaseSchema {
     {
       id: 'plan_basic',
       name: 'Basic',
-      monthlyPrice: 49,
-      annualPrice: 39,
-      description: 'Essential access for self-driven fitness enthusiasts.',
+      monthlyPrice: 399,
+      annualPrice: 319,
+      description: 'Essential gym access for dedicated individual members.',
       badge: 'Starter',
       features: [
-        'Full access to all gym floor equipment & free weights',
-        'Locker rooms & infrared sauna access',
-        'Basic IronCore mobile app tracking',
-        'Free Wi-Fi & towel service',
-        '1 complimentary fitness assessment',
+        'Full access to gym floor equipment',
+        'IronCore mobile workout logging app',
+        'Contactless QR gym check-in',
+        'Locker room and standard shower access',
+        'Basic progress metrics and bodyweight chart',
       ],
       status: 'ACTIVE',
     },
     {
       id: 'plan_pro',
       name: 'Pro',
-      monthlyPrice: 89,
-      annualPrice: 69,
-      description: 'Our most popular comprehensive coaching and progress system.',
+      monthlyPrice: 799,
+      annualPrice: 639,
+      description: 'Performance and coaching for disciplined athletes.',
       badge: 'Most Popular',
       isPopular: true,
       features: [
         'Everything in Basic',
-        'Unlimited group classes & HYROX conditioning',
-        'Full AI & trainer-assigned workout programming',
-        'Nutrition macro planner & meal logging',
-        '2 monthly 1-on-1 personal training sessions',
-        'Body composition 3D scan every 30 days',
-        'Guest privileges (2 passes per month)',
+        'Unlimited access to all 6 workout programs',
+        'Advanced 1RM and volume analytics dashboard',
+        'Full nutrition tracking and daily macro coaching',
+        '2 monthly 1-on-1 personal trainer sessions',
+        'Unlimited infrared sauna and cold plunge access',
+        'Bring a guest free 2 times every month',
       ],
       status: 'ACTIVE',
     },
     {
       id: 'plan_elite',
       name: 'Elite',
-      monthlyPrice: 149,
-      annualPrice: 119,
-      description: 'The pinnacle of dedicated personal coaching, recovery, and VIP access.',
-      badge: 'VIP Elite',
+      monthlyPrice: 1199,
+      annualPrice: 959,
+      description: 'All-inclusive premium support for peak athletic performance.',
+      badge: 'All-Inclusive',
       features: [
         'Everything in Pro',
-        'Weekly dedicated 1-on-1 personal coaching session',
-        'Private VIP training lounge & recovery suite',
-        'Cold plunge, hyperbaric oxygen, and cryotherapy access',
-        'Custom monthly supplement stack delivered to locker',
-        'Unlimited guest passes & 24/7 priority concierge',
+        'Unlimited 1-on-1 personal trainer sessions',
+        'Weekly customized bloodwork and bio-metric review',
+        'Reserved private executive locker and laundry service',
+        'Daily complimentary pre-workout and whey shake bar',
+        '24/7 direct WhatsApp concierge line with Head Coach',
+        'Unlimited multi-city IronCore club roaming',
       ],
       status: 'ACTIVE',
     },
@@ -714,6 +724,7 @@ function shouldSeedDemoData(): boolean {
 // built-in seed data when shouldSeedDemoData() allows it, otherwise starting
 // from a genuinely empty database. Existing data (e.g. migrated from SQLite
 // via `npm run migrate:postgres`) is never touched by this.
+export let activeDriver: 'postgres' | 'sqlite' = 'sqlite';
 let dbPromise: Promise<DatabaseSchema> | null = null;
 
 export async function getDatabase(): Promise<DatabaseSchema> {
@@ -722,21 +733,53 @@ export async function getDatabase(): Promise<DatabaseSchema> {
 
   dbPromise = (async () => {
     const seedAllowed = shouldSeedDemoData();
-    const result = await seedIfEmpty(seedAllowed ? generateSeedData : emptyDatabase);
+    const hasPostgresUrl = Boolean(process.env.DATABASE_URL?.trim());
 
-    if (result.ranSeed) {
-      if (!seedAllowed) {
-        console.log(
-          '[db] No existing data found — starting with an EMPTY database ' +
-            '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
-            'once to create the built-in demo accounts instead.'
+    if (hasPostgresUrl) {
+      try {
+        const result = await pgSeedIfEmpty(seedAllowed ? generateSeedData : emptyDatabase);
+        if (result.ranSeed) {
+          if (!seedAllowed) {
+            console.log(
+              '[db] No existing data found — starting with an EMPTY database ' +
+                '(demo seed data is disabled). Set SEED_DEMO_DATA=true and restart ' +
+                'once to create the built-in demo accounts instead.'
+            );
+          } else {
+            console.log('[db] No existing data found — seeded PostgreSQL with built-in demo data:', result.counts);
+          }
+        }
+        dbCache = await pgHydrateAll();
+        activeDriver = 'postgres';
+        console.log('[db] Connected and using PostgreSQL database.');
+        return dbCache;
+      } catch (err) {
+        console.warn(
+          '[db] PostgreSQL connection failed (' +
+            (err instanceof Error ? err.message : String(err)) +
+            '). Falling back to local SQLite database.'
         );
-      } else {
-        console.log('[db] No existing data found — seeded PostgreSQL with built-in demo data:', result.counts);
       }
     }
 
-    dbCache = await hydrateAll();
+    // SQLite fallback
+    activeDriver = 'sqlite';
+    const result = migrateFromJsonIfNeeded(seedAllowed ? generateSeedData : emptyDatabase);
+    if (result.ranMigration) {
+      if (result.source === 'seed' && !seedAllowed) {
+        console.log(
+          '[db] No existing data found — starting with an EMPTY SQLite database ' +
+            '(demo seed data is disabled).'
+        );
+      } else {
+        console.log(
+          `[db] Migrated data into SQLite from ${result.source === 'json' ? 'data/ironcore_db.json' : 'built-in seed data'}:`,
+          result.counts
+        );
+      }
+    }
+    dbCache = sqliteHydrateAll();
+    console.log('[db] Connected and using local SQLite database.');
     return dbCache;
   })();
 
@@ -746,8 +789,12 @@ export async function getDatabase(): Promise<DatabaseSchema> {
 export async function saveDatabase(data: DatabaseSchema): Promise<void> {
   dbCache = data;
   try {
-    await persistAll(data);
+    if (activeDriver === 'postgres') {
+      await pgPersistAll(data);
+    } else {
+      sqlitePersistAll(data);
+    }
   } catch (e) {
-    console.error('Failed to write PostgreSQL database:', e);
+    console.error(`Failed to write ${activeDriver} database:`, e);
   }
 }

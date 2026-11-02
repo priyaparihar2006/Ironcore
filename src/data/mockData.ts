@@ -284,62 +284,67 @@ export const PRICING_PLANS: PricingPlan[] = [
   {
     id: 'basic',
     name: 'Basic',
-    monthlyPrice: 999,
-    annualPrice: 799,
+    monthlyPrice: 399,
+    semiAnnualPrice: 359,
+    annualPrice: 319,
     currency: '₹',
-    description: 'Essential gym access & foundational tracking tools for disciplined solo athletes.',
+    badge: 'Starter',
+    description: 'Essential gym access for dedicated individual fitness enthusiasts.',
     features: [
-      'Full access to all IronCore gym floor equipment',
+      'Full access to gym floor equipment',
       'IronCore mobile workout logging app',
       'Contactless QR gym check-in',
-      'Locker room & standard shower access',
-      'Basic progress metrics & bodyweight chart'
+      'Locker room and standard shower access',
+      'Basic progress metrics and bodyweight chart'
     ],
     excludedFeatures: [
-      'Personal coach video form reviews',
-      'Sauna & Cryotherapy recovery lounge',
-      'Custom macro nutrition planner',
-      'Priority peak-hours booking'
+      'Unlimited access to all 6 workout programs',
+      'Advanced 1RM and volume analytics dashboard',
+      '1-on-1 personal trainer sessions',
+      'Infrared sauna and cold plunge access'
     ]
   },
   {
     id: 'pro',
     name: 'Pro',
-    monthlyPrice: 1999,
-    annualPrice: 1599,
+    monthlyPrice: 799,
+    semiAnnualPrice: 719,
+    annualPrice: 639,
     currency: '₹',
     isPopular: true,
     badge: 'Most Popular',
-    description: 'The complete performance system. Dedicated guidance, smart nutrition, and full amenities.',
+    description: 'Performance and coaching for results-driven athletes.',
     features: [
-      'Everything in Basic plan',
-      'Unlimited access to all 6 Workout Programs',
-      'Advanced 1RM & volume analytics dashboard',
-      'Full Nutrition tracking & daily macro coaching',
-      '2x monthly 1-on-1 personal trainer sessions',
-      'Unlimited Infrared Sauna & cold plunge access',
-      'Bring a guest free 2x every month'
+      'Everything in Basic',
+      'Unlimited access to all 6 workout programs',
+      'Advanced 1RM and volume analytics dashboard',
+      'Full nutrition tracking and daily macro coaching',
+      '2 monthly 1-on-1 personal trainer sessions',
+      'Unlimited infrared sauna and cold plunge access',
+      'Bring a guest free 2 times every month'
     ],
     excludedFeatures: [
-      'Dedicated private VIP locker & laundry service',
-      'Unlimited private master coach sessions'
+      'Weekly customized bloodwork & bio-metric review',
+      'Reserved private executive locker & laundry service',
+      '24/7 direct WhatsApp concierge line with Head Coach'
     ]
   },
   {
     id: 'elite',
     name: 'Elite',
-    monthlyPrice: 2999,
-    annualPrice: 2399,
+    monthlyPrice: 1199,
+    semiAnnualPrice: 1079,
+    annualPrice: 959,
     currency: '₹',
     badge: 'All-Inclusive',
-    description: 'The pinnacle of personalized fitness luxury and unlimited athletic support.',
+    description: 'All-inclusive premium support for peak athletic performance.',
     features: [
-      'Everything in Pro plan',
+      'Everything in Pro',
       'Unlimited 1-on-1 personal trainer sessions',
-      'Weekly customized bloodwork & bio-metric review',
-      'Reserved private executive locker & laundry service',
-      'Daily complimentary pre-workout & whey shake bar',
-      '24/7 direct WApp concierge line with Head Coach',
+      'Weekly customized bloodwork and bio-metric review',
+      'Reserved private executive locker and laundry service',
+      'Daily complimentary pre-workout and whey shake bar',
+      '24/7 direct WhatsApp concierge line with Head Coach',
       'Unlimited multi-city IronCore club roaming'
     ]
   }
